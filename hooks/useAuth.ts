@@ -1,12 +1,22 @@
-import { getCurrentUser, getUserList } from "@/actions/userAction";
+import {
+	getCurrentUser,
+	getCurrentUserProfile,
+	getUserList,
+	updateUserAvatar,
+	updateUserProfile,
+} from "@/actions/userAction";
 import { createClient } from "@/lib/supabase/client";
 import {
 	SignInInput,
 	SignInResponse,
 	SignupInput,
 	SignupResponse,
+	UpdateAvatarInput,
+	UpdateProfileInput,
+	UserProfile,
 } from "@/types/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export const useSignup = () => {
@@ -71,6 +81,7 @@ export const useSignIn = () => {
 
 /*================== Sign out Hook ==================*/
 export const useSignOut = () => {
+	const router = useRouter();
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: async () => {
@@ -84,6 +95,7 @@ export const useSignOut = () => {
 			queryClient.invalidateQueries({ queryKey: ["user"] });
 			queryClient.invalidateQueries({ queryKey: ["userList"] });
 			toast.success("Successfully signed out. See you next time!");
+			router.refresh();
 		},
 		onError: (error) => {
 			console.error("Sign out failed:", error);
@@ -105,5 +117,55 @@ export const useUserList = () => {
 	return useQuery({
 		queryKey: ["userList"],
 		queryFn: getUserList,
+	});
+};
+
+//*================== Get User Profile Hook ==================*/
+
+export const useCurrentUserProfile = () => {
+	return useQuery<UserProfile | null>({
+		queryKey: ["userProfile"],
+		queryFn: getCurrentUserProfile,
+	});
+};
+
+/*================== Update User Profile Hook ==================*/
+
+export const useUpdateUserProfile = () => {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (profileData: UpdateProfileInput) => {
+			const data = await updateUserProfile(profileData);
+			console.log("Profile update response:", data);
+			return data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+			toast.success("Profile updated successfully!");
+		},
+		onError: (error) => {
+			toast.error(
+				error.message || "Failed to update profile. Please try again.",
+			);
+		},
+	});
+};
+
+/*================== Update User Avatar Hook ==================*/
+
+export const useUpdateUserAvatar = () => {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (avatarData: UpdateAvatarInput) =>
+			await updateUserAvatar(avatarData),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+			toast.success("Avatar updated successfully!");
+		},
+		onError: (error) => {
+			toast.error(
+				error.message || "Failed to update avatar. Please try again.",
+			);
+		},
 	});
 };

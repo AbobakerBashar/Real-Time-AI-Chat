@@ -3,12 +3,34 @@
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { useGetRoomMembers } from "@/hooks/useRooms";
+import { useTheme } from "@/components/common/ThemeProvider";
 import { Member } from "@/types/auth";
 import { motion } from "framer-motion";
-import { Bell, Info, MoreVertical, Phone, Search, Video } from "lucide-react";
+import {
+	Bell,
+	Info,
+	MoreVertical,
+	Phone,
+	Search,
+	Video,
+	Moon,
+	Sun,
+	LayoutDashboard,
+	Menu,
+	X,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import Link from "next/link";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetClose,
+} from "@/components/ui/sheet";
+import Sidebar from "./Sidebar";
 
 const headerVariants = {
 	hidden: { opacity: 0, y: -20 },
@@ -23,10 +45,12 @@ const headerVariants = {
 
 const Header = ({ roomId }: { roomId: string }) => {
 	const [isOnline] = useState(true);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const { data: currentUser, isLoading: isCurrentUserLoading } =
 		useCurrentUser();
 	const { data: roomMembers, isLoading: isLoadingMembers } =
 		useGetRoomMembers(roomId);
+	const { toggleTheme, theme } = useTheme();
 
 	const isLoading = isCurrentUserLoading || isLoadingMembers;
 
@@ -39,13 +63,32 @@ const Header = ({ roomId }: { roomId: string }) => {
 			variants={headerVariants}
 			initial="hidden"
 			animate="visible"
-			className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-colors duration-300 h-18 shrink-0"
+			className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 sm:p-4 transition-colors duration-300 h-auto sm:h-18 shrink-0"
 		>
-			<header className="max-w-4xl px-6 flex items-center justify-between">
-				<div className="flex items-center gap-4 flex-1">
+			<header className="max-w-4xl px-2 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
+				{/* Mobile Menu Button */}
+				<Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="md:hidden hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						onClick={() => setIsMobileMenuOpen(true)}
+						title="Open menu"
+					>
+						<Menu className="w-5 h-5" />
+					</Button>
+					<SheetContent side="left" className="w-80 p-0">
+						<SheetClose className="absolute top-2 right-2 z-50">
+							<X className="w-5 h-5" />
+						</SheetClose>
+						<Sidebar isMobile={true} />
+					</SheetContent>
+				</Sheet>
+
+				<div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
 					<motion.div
 						whileHover={{ scale: 1.05 }}
-						className="w-12 h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none"
+						className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none flex-shrink-0"
 					>
 						{receiver ? (
 							<Avatar>
@@ -67,11 +110,11 @@ const Header = ({ roomId }: { roomId: string }) => {
 							<div className="w-24 h-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse mb-1" />
 						) : receiver ? (
 							<>
-								<h1 className="text-xl font-bold text-gray-900 dark:text-white">
+								<h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
 									{receiver.full_name || receiver.username || "Unknown User"}
 								</h1>
 								<p
-									className={`text-sm flex items-center gap-1 ${
+									className={`text-xs sm:text-sm flex items-center gap-1 ${
 										isOnline
 											? "text-green-600 dark:text-green-400"
 											: "text-gray-500 dark:text-gray-400"
@@ -89,11 +132,11 @@ const Header = ({ roomId }: { roomId: string }) => {
 							</>
 						) : (
 							<>
-								<h1 className="text-xl font-bold text-gray-900 dark:text-white">
+								<h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
 									ChatAI Assistant
 								</h1>
 								<p
-									className={`text-sm flex items-center gap-1 ${
+									className={`text-xs sm:text-sm flex items-center gap-1 ${
 										isOnline
 											? "text-green-600 dark:text-green-400"
 											: "text-gray-500 dark:text-gray-400"
@@ -113,11 +156,11 @@ const Header = ({ roomId }: { roomId: string }) => {
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1">
+				<div className="flex items-center gap-0.5 sm:gap-1">
 					<Button
 						variant="ghost"
 						size="sm"
-						className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						className="hidden sm:inline-flex hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
 						onClick={() => toast.info("Search feature coming soon!")}
 						title="Search messages"
 					>
@@ -126,7 +169,7 @@ const Header = ({ roomId }: { roomId: string }) => {
 					<Button
 						variant="ghost"
 						size="sm"
-						className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						className="hidden md:inline-flex hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
 						onClick={() => toast.info("Voice call feature coming soon!")}
 						title="Start voice call"
 					>
@@ -135,7 +178,7 @@ const Header = ({ roomId }: { roomId: string }) => {
 					<Button
 						variant="ghost"
 						size="sm"
-						className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						className="hidden md:inline-flex hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
 						onClick={() => toast.info("Video call feature coming soon!")}
 						title="Start video call"
 					>
@@ -145,6 +188,19 @@ const Header = ({ roomId }: { roomId: string }) => {
 						variant="ghost"
 						size="sm"
 						className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						onClick={toggleTheme}
+						title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+					>
+						{theme === "light" ? (
+							<Moon className="w-5 h-5" />
+						) : (
+							<Sun className="w-5 h-5" />
+						)}
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="hidden md:inline-flex hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
 						onClick={() => toast.info("Notifications settings")}
 						title="Notifications"
 					>
@@ -153,12 +209,22 @@ const Header = ({ roomId }: { roomId: string }) => {
 					<Button
 						variant="ghost"
 						size="sm"
-						className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+						className="hidden md:inline-flex hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
 						onClick={() => toast.info("Room information")}
 						title="Room info"
 					>
 						<Info className="w-5 h-5" />
 					</Button>
+					<Link href="/dashboard/profile">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+							title="Go to Dashboard"
+						>
+							<LayoutDashboard className="w-5 h-5" />
+						</Button>
+					</Link>
 					<Button
 						variant="ghost"
 						size="sm"

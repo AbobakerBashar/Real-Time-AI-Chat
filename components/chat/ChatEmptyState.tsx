@@ -42,11 +42,11 @@ export default function ChatEmptyState() {
 			className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden"
 		>
 			{/* Gradient Background */}
-			<div className="absolute inset-0 bg-linear-to-br from-black via-gray-950 to-gray-900 dark:from-gray-950 dark:via-black dark:to-gray-950" />
+			<div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:bg-linear-to-br dark:from-black dark:via-gray-950 dark:to-gray-900 dark:from-gray-950 dark:via-black dark:to-gray-950" />
 
 			{/* Radial Gradient Glow */}
 			<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-				<div className="w-96 h-96 bg-linear-to-r from-indigo-500/20 via-purple-500/10 to-indigo-500/20 rounded-full blur-3xl" />
+				<div className="w-96 h-96 bg-gradient-to-r from-indigo-500/10 dark:from-indigo-500/20 via-purple-500/5 dark:via-purple-500/10 to-indigo-500/10 dark:to-indigo-500/20 rounded-full blur-3xl" />
 			</div>
 
 			{/* Content */}
@@ -66,10 +66,10 @@ export default function ChatEmptyState() {
 
 				{/* Hero Message */}
 				<motion.div variants={itemVariants} className="mb-2">
-					<h2 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent mb-3">
+					<h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 dark:from-white via-purple-600 dark:via-indigo-200 to-indigo-600 dark:to-purple-200 bg-clip-text text-transparent mb-3">
 						Let&rsquo;s Start Chatting!
 					</h2>
-					<p className="text-lg text-gray-400 max-w-xl mx-auto">
+					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
 						Select an existing conversation or create a new one to begin. Choose
 						from AI assistance, personal chats, or group conversations.
 					</p>
@@ -98,7 +98,7 @@ export default function ChatEmptyState() {
 						// whileTap={{ scale: 0.98 }}
 						// onClick={() => onCreateNewRoom("person")}
 						// disabled={isCreating}
-						className="group relative flex items-center gap-3 px-8 py-4 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-600 disabled:cursor-not-allowed border border-indigo-500/20 hover:border-indigo-500/50 rounded-xl font-semibold text-white transition-all duration-300"
+						className="group relative flex items-center gap-3 px-8 py-4 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed border border-indigo-300 dark:border-indigo-500/20 hover:border-indigo-400 dark:hover:border-indigo-500/50 rounded-xl font-semibold text-gray-800 dark:text-white transition-all duration-300"
 					>
 						<Plus className="w-5 h-5" />
 						<span>Direct Message</span>
@@ -110,7 +110,7 @@ export default function ChatEmptyState() {
 						whileTap={{ scale: 0.98 }}
 						// onClick={() => onCreateNewRoom("group")}
 						// disabled={isCreating}
-						className="group relative flex items-center gap-3 px-8 py-4 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-600 disabled:cursor-not-allowed border border-purple-500/20 hover:border-purple-500/50 rounded-xl font-semibold text-white transition-all duration-300"
+						className="group relative flex items-center gap-3 px-8 py-4 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed border border-purple-300 dark:border-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/50 rounded-xl font-semibold text-gray-800 dark:text-white transition-all duration-300"
 					>
 						<Share2 className="w-5 h-5" />
 						<span>Group Chat</span>
@@ -120,7 +120,7 @@ export default function ChatEmptyState() {
 				{/* Info Text */}
 				<motion.p
 					variants={itemVariants}
-					className="mt-8 text-sm text-gray-500"
+					className="mt-8 text-sm text-gray-600 dark:text-gray-500"
 				>
 					💡 Tip: Use the search bar on the left to quickly find existing
 					conversations

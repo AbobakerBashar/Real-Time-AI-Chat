@@ -3,7 +3,7 @@ import { Database } from "./supabase";
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type MinimalMessage = Pick<
 	Message,
-	"id" | "content" | "created_at" | "is_ai"
+	"id" | "content" | "created_at" | "is_ai" | "sender_id"
 >;
 
 export interface MessageInput {

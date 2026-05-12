@@ -1,4 +1,4 @@
-import { getRoomMembers } from "@/actions/messagesActions";
+import { getRoomMembers, getRecentRooms } from "@/actions/messagesActions";
 import { CreateRoomInput, CreateRoomResponse } from "@/types/rooms";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -35,5 +35,14 @@ export const useGetRoomMembers = (roomId: string) => {
 		queryKey: ["roomMembers", roomId],
 		queryFn: async () => await getRoomMembers(roomId),
 		enabled: !!roomId,
+	});
+};
+
+/*================= Get Recent Rooms =================*/
+export const useRecentRooms = (limit: number = 10) => {
+	return useQuery({
+		queryKey: ["recentRooms", limit],
+		queryFn: async () => await getRecentRooms(limit),
+		refetchInterval: 30000, // Refetch every 30 seconds
 	});
 };

@@ -41,6 +41,14 @@ export type MinimalProfile = Pick<
 	Profile,
 	"id" | "username" | "full_name" | "avatar_url"
 >;
+
+export interface UserProfile extends MinimalProfile {
+	email: string;
+	created_at: string;
+	updated_at?: string;
+	is_active?: boolean;
+}
+
 export interface RawMember {
 	profiles:
 		| {
@@ -66,3 +74,13 @@ export interface Member {
 	avatar_url: string | null;
 	is_active: boolean;
 }
+
+export type UpdateProfileInput = {
+	full_name?: string;
+	username?: string;
+};
+
+export type UpdateAvatarInput = {
+	old_image_url?: string;
+	image_file?: File;
+};

@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Member, RawMember } from "@/types/auth";
 import { MinimalMessage } from "@/types/messages";
+import { getCurrentUser } from "./userAction";
+import { RecentRoom } from "@/types/rooms";
 
 export const getMessages = async (
 	roomId: string,
@@ -10,7 +12,7 @@ export const getMessages = async (
 	const supabase = await createClient();
 	const { data, error } = await supabase
 		.from("messages")
-		.select("id, content, created_at, is_ai")
+		.select("id, content, created_at, is_ai, sender_id")
 		.eq("room_id", roomId)
 		.order("created_at", { ascending: true });
 
@@ -50,4 +52,53 @@ export const getRoomMembers = async (
 		.filter((m): m is Member => m !== null);
 
 	return members;
+};
+
+/*================= Get Recent Rooms =================*/
+export const getRecentRooms = async (
+	limit: number = 10,
+): Promise<RecentRoom[]> => {
+	const supabase = await createClient();
+
+	const user = await getCurrentUser();
+
+	if (!user) return [];
+
+	// Get rooms where the user is a member, ordered by latest message
+	const { data: rooms, error: roomsError } = await supabase
+		.from("rooms")
+		.select("id, name, is_ai")
+		.eq("created_by", user.id)
+		.order("created_at", { ascending: false });
+
+	if (roomsError) {
+		console.error("Error fetching rooms:", roomsError);
+		return [];
+	}
+
+	// Extract and format room data with latest message
+	const formattedRooms = await Promise.all(
+		(rooms || []).map(async (item: RecentRoom) => {
+			if (!item.id) return null;
+
+			// Get the latest message in this room
+			const { data: latestMessage } = await supabase
+				.from("messages")
+				.select("content, created_at")
+				.eq("room_id", item.id)
+				.order("created_at", { ascending: false })
+				.limit(1)
+				.maybeSingle();
+
+			return {
+				id: item.id,
+				name: item.name,
+				is_ai: item.is_ai,
+				last_message: latestMessage?.content,
+				last_message_at: latestMessage?.created_at,
+			};
+		}),
+	);
+
+	return formattedRooms.filter((room) => room !== null).slice(0, limit);
 };

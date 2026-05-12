@@ -1,9 +1,12 @@
 "use client";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { useMessageRealtime } from "@/hooks/useMessageRealtime ";
 import { useGetMessages } from "@/hooks/useMesssages";
 import { formatTime } from "@/utils/formatTime";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader } from "lucide-react";
+import { Loader, Send, MessageCircle, Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 
 const messageVariants = {
 	hidden: { opacity: 0, y: 20, scale: 0.8 },
@@ -20,7 +23,11 @@ const messageVariants = {
 
 const MessagesContainer = ({ roomId }: { roomId: string }) => {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const { data: messages, isLoading: isLoading } = useGetMessages(roomId);
+	const { data: messages, isLoading } = useGetMessages(roomId);
+	const { data: currentUser } = useCurrentUser();
+
+	// Set up real-time updates for messages in this room
+	useMessageRealtime(roomId);
 
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -30,61 +37,140 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 		scrollToBottom();
 	}, [messages]);
 
-	const isAI = messages && messages.length > 0 ? messages[0].is_ai : false;
+	const isSentMessage = (senderId: string | null) => {
+		return senderId === currentUser?.id;
+	};
 
 	return (
-		<div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 flex flex-col">
-			<div className="max-w-4xl w-full mx-auto flex-1 flex flex-col space-y-4">
+		<div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 flex flex-col">
+			<div className="max-w-4xl w-full mx-auto flex-1 flex flex-col space-y-3 sm:space-y-4">
 				<AnimatePresence>
 					{!isLoading &&
 						messages &&
-						messages.map((message) => (
-							<motion.div
-								key={message.id}
-								variants={messageVariants}
-								initial="hidden"
-								animate="visible"
-								exit="exit"
-								className={`flex ${!isAI ? "justify-end" : "justify-start"}`}
-							>
+						messages.map((message) => {
+							const isSent = isSentMessage(message.sender_id);
+							const isAIMessage = message.is_ai;
+
+							return (
 								<motion.div
-									whileHover={{ scale: 1.02 }}
-									className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
-										!isAI
-											? "bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 text-white rounded-br-none"
-											: "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none"
-									}`}
+									key={message.id}
+									variants={messageVariants}
+									initial="hidden"
+									animate="visible"
+									exit="exit"
+									className={`flex ${isSent ? "justify-end" : "justify-start"} gap-2 items-end`}
 								>
-									<p className="text-sm md:text-base">{message.content}</p>
-									<p
-										className={`text-xs mt-1.5 ${
-											!isAI
-												? "text-blue-100"
-												: "text-gray-500 dark:text-gray-400"
+									{/* Left side icon for received messages */}
+									{!isSent && (
+										<motion.div
+											whileHover={{ scale: 1.1 }}
+											className="shrink-0 flex items-center justify-center"
+										>
+											{isAIMessage ? (
+												<div className="w-8 h-8 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white">
+													<Sparkles className="w-4 h-4" />
+												</div>
+											) : (
+												<div className="w-8 h-8 rounded-full bg-linear-to-r from-cyan-500 to-blue-500 flex items-center justify-center text-white">
+													<MessageCircle className="w-4 h-4" />
+												</div>
+											)}
+										</motion.div>
+									)}
+
+									{/* Message bubble */}
+									<motion.div
+										whileHover={{ scale: 1.02 }}
+										className={`max-w-sm sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-sm shadow-indigo-500/20 ${
+											isSent
+												? "bg-linear-to-r from-indigo-600 to-purple-600 dark:from-indigo-600 dark:to-purple-600 text-white rounded-br-none"
+												: isAIMessage
+													? "bg-linear-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 text-gray-900 dark:text-white rounded-bl-none border border-purple-200 dark:border-purple-700"
+													: "bg-linear-to-r from-cyan-100 to-blue-100 dark:from-cyan-900 dark:to-blue-900 text-gray-900 dark:text-white rounded-bl-none border border-cyan-200 dark:border-cyan-700"
 										}`}
 									>
-										{formatTime(message.created_at || "")}
-									</p>
+										{/* Badge and sender info */}
+										<div className="flex items-center gap-2 mb-2">
+											{isSent ? (
+												<Badge
+													variant="secondary"
+													className="bg-indigo-200/50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-200 text-xs"
+												>
+													<Send className="w-3 h-3 mr-1" />
+													You
+												</Badge>
+											) : isAIMessage ? (
+												<Badge
+													variant="secondary"
+													className="bg-purple-200/50 dark:bg-purple-900/50 text-purple-700 dark:text-purple-200 text-xs"
+												>
+													<Sparkles className="w-3 h-3 mr-1" />
+													AI Assistant
+												</Badge>
+											) : (
+												<Badge
+													variant="secondary"
+													className="bg-cyan-200/50 dark:bg-cyan-900/50 text-cyan-700 dark:text-cyan-200 text-xs"
+												>
+													<MessageCircle className="w-3 h-3 mr-1" />
+													Other User
+												</Badge>
+											)}
+										</div>
+
+										{/* Message content */}
+										<p className="text-sm md:text-base wrap-break-word">
+											{message.content}
+										</p>
+
+										{/* Timestamp */}
+										<p
+											className={`text-xs mt-2 opacity-70 ${
+												isSent
+													? "text-indigo-100"
+													: isAIMessage
+														? "text-purple-700 dark:text-purple-300"
+														: "text-cyan-700 dark:text-cyan-300"
+											}`}
+										>
+											{formatTime(message.created_at || "")}
+										</p>
+									</motion.div>
+
+									{/* Right side icon for sent messages */}
+									{isSent && (
+										<motion.div
+											whileHover={{ scale: 1.1 }}
+											className="shrink-0 flex items-center justify-center"
+										>
+											<div className="w-8 h-8 rounded-full bg-linear-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white">
+												<Send className="w-4 h-4" />
+											</div>
+										</motion.div>
+									)}
 								</motion.div>
-							</motion.div>
-						))}
+							);
+						})}
 				</AnimatePresence>
 
 				{isLoading && (
 					<motion.div
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
-						className="flex justify-start"
+						className="flex justify-start gap-2 items-end"
 					>
-						<div className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg rounded-bl-none flex items-center gap-2">
+						<div className="w-8 h-8 rounded-full bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white">
+							<Sparkles className="w-4 h-4" />
+						</div>
+						<div className="bg-linear-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 px-4 py-3 rounded-lg rounded-bl-none flex items-center gap-2 border border-purple-200 dark:border-purple-700">
 							<motion.div
 								animate={{ rotate: 360 }}
 								transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
 							>
-								<Loader className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+								<Loader className="w-4 h-4 text-purple-600 dark:text-purple-400" />
 							</motion.div>
-							<span className="text-sm text-gray-600 dark:text-gray-400">
-								{isAI ? "Loading AI response..." : "Loading messages..."}
+							<span className="text-sm text-purple-700 dark:text-purple-300">
+								AI is typing...
 							</span>
 						</div>
 					</motion.div>

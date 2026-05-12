@@ -1,5 +1,6 @@
-import { getMessages } from "@/actions/messagesActions";
+import { getMessages, getRecentRooms } from "@/actions/messagesActions";
 import {
+	Message,
 	MessageInput,
 	MessageResponse,
 	MinimalMessage,
@@ -37,12 +38,24 @@ export const useSendMessage = () => {
 			return result;
 		},
 		onSuccess: (data) => {
-			queryClient.invalidateQueries({
-				queryKey: ["messages", data.data?.room_id],
-			});
+			if (!data.data) return;
+			queryClient.setQueryData(
+				["messages", data.data.room_id],
+				(oldMessages: Message[] = []) => [...oldMessages, data.data],
+			);
 		},
+
 		onError: (error) => {
 			toast.error(error.message || "Failed to send message");
 		},
+	});
+};
+
+/*================= Get Recent Messages =================*/
+export const useRecentMessages = (limit: number = 10) => {
+	return useQuery({
+		queryKey: ["recentRooms", limit],
+		queryFn: async () => await getRecentRooms(limit),
+		refetchInterval: 30000,
 	});
 };
