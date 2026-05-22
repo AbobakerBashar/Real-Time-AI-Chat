@@ -3,14 +3,16 @@
 import { Button } from "@/components/ui/button";
 
 import { useCurrentUser, useUserList } from "@/hooks/useAuth";
+import { Member } from "@/types/auth";
 import Image from "next/image";
 
 export interface SelectionDialogProps {
 	isOpen: boolean;
 	onClose: () => void;
 	type: "person" | "group";
-	onSelect: (userId: string, userName: string) => void;
+	onSelect: (userId: string) => void;
 	isLoading: boolean;
+	existingMembers?: Member[];
 }
 
 export const SelectUserDialog = ({
@@ -19,6 +21,7 @@ export const SelectUserDialog = ({
 	type,
 	onSelect,
 	isLoading,
+	existingMembers = [],
 }: SelectionDialogProps) => {
 	const { data: currentUser, isLoading: isCurrentUserLoading } =
 		useCurrentUser();
@@ -60,6 +63,46 @@ export const SelectUserDialog = ({
 						<div className="text-center py-4 text-gray-500">
 							No users available
 						</div>
+					) : existingMembers.length > 0 ? (
+						users
+							.filter(
+								(user) =>
+									!existingMembers.some((member) => member.id === user.id) &&
+									user.id !== currentUser?.id,
+							)
+							.map((user) => (
+								<button
+									key={user.id}
+									onClick={() => {
+										onSelect(user.id);
+										onClose();
+									}}
+									disabled={isLoading}
+									className="w-full text-left p-3 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-3"
+								>
+									{user.avatar_url ? (
+										<Image
+											width={40}
+											height={40}
+											src={user.avatar_url}
+											alt={user.username || "User Avatar"}
+											className="w-10 h-10 rounded-full"
+										/>
+									) : (
+										<div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
+											{user.username?.[0].toUpperCase() || "U"}
+										</div>
+									)}
+									<div>
+										<p className="font-medium text-gray-900 dark:text-white">
+											{user.full_name || user.username}
+										</p>
+										<p className="text-sm text-gray-500 dark:text-gray-400">
+											@{user.username}
+										</p>
+									</div>
+								</button>
+							))
 					) : (
 						users.map(
 							(user) =>
@@ -67,10 +110,7 @@ export const SelectUserDialog = ({
 									<button
 										key={user.id}
 										onClick={() => {
-											onSelect(
-												user.id,
-												user.full_name || user.username || "Unknown",
-											);
+											onSelect(user.id);
 											onClose();
 										}}
 										disabled={isLoading}

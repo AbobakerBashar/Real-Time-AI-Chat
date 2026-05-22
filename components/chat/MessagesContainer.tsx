@@ -4,9 +4,19 @@ import { useMessageRealtime } from "@/hooks/useMessageRealtime ";
 import { useGetMessages } from "@/hooks/useMesssages";
 import { formatTime } from "@/utils/formatTime";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader, Send, MessageCircle, Sparkles } from "lucide-react";
+import {
+	Loader,
+	Send,
+	MessageCircle,
+	Sparkles,
+	Trash2,
+	Pen,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "../ui/button";
+import { useGetRoomDetails } from "@/hooks/useRooms";
+import { MinimalProfile } from "@/types/auth";
 
 const messageVariants = {
 	hidden: { opacity: 0, y: 20, scale: 0.8 },
@@ -25,6 +35,9 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const { data: messages, isLoading } = useGetMessages(roomId);
 	const { data: currentUser } = useCurrentUser();
+	const { data: details, isLoading: isLoadingDetails } =
+		useGetRoomDetails(roomId);
+	const members: MinimalProfile[] = details?.members || [];
 
 	// Set up real-time updates for messages in this room
 	useMessageRealtime(roomId);
@@ -113,7 +126,10 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 													className="bg-cyan-200/50 dark:bg-cyan-900/50 text-cyan-700 dark:text-cyan-200 text-xs"
 												>
 													<MessageCircle className="w-3 h-3 mr-1" />
-													Other User
+													{(members &&
+														members.find((m) => m.id === message.sender_id)
+															?.username) ||
+														"User"}
 												</Badge>
 											)}
 										</div>
@@ -124,17 +140,35 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 										</p>
 
 										{/* Timestamp */}
-										<p
-											className={`text-xs mt-2 opacity-70 ${
-												isSent
-													? "text-indigo-100"
-													: isAIMessage
-														? "text-purple-700 dark:text-purple-300"
-														: "text-cyan-700 dark:text-cyan-300"
-											}`}
-										>
-											{formatTime(message.created_at || "")}
-										</p>
+										<div className="mt-2 flex items-center gap-5 justify-between">
+											<p
+												className={`text-xs opacity-70 ${
+													isSent
+														? "text-indigo-100"
+														: isAIMessage
+															? "text-purple-700 dark:text-purple-300"
+															: "text-cyan-700 dark:text-cyan-300"
+												}`}
+											>
+												{formatTime(message.created_at || "")}
+											</p>
+											{isSent && (
+												<div className="flex items-center gap-0">
+													<Button
+														size="sm"
+														className="w-6 h-6 p-0 text-indigo-600 hover:text-indigo-700 bg-transparent"
+													>
+														<Pen className="w-3 h-3" />
+													</Button>
+													<Button
+														size="sm"
+														className="w-6 h-6 p-0 bg-transparent text-destructive hover:text-red-600"
+													>
+														<Trash2 className="w-full h-full" />
+													</Button>
+												</div>
+											)}
+										</div>
 									</motion.div>
 
 									{/* Right side icon for sent messages */}
@@ -170,7 +204,7 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 								<Loader className="w-4 h-4 text-purple-600 dark:text-purple-400" />
 							</motion.div>
 							<span className="text-sm text-purple-700 dark:text-purple-300">
-								AI is typing...
+								Loading messages...
 							</span>
 						</div>
 					</motion.div>

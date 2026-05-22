@@ -2,6 +2,7 @@ import {
 	getCurrentUser,
 	getCurrentUserProfile,
 	getUserList,
+	getUsersWithoutRoom,
 	updateUserAvatar,
 	updateUserProfile,
 } from "@/actions/userAction";
@@ -40,6 +41,7 @@ export const useSignup = () => {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["user"] });
 			queryClient.invalidateQueries({ queryKey: ["userList"] });
+			queryClient.invalidateQueries({ queryKey: ["usersWithoutRoom"] });
 		},
 		onError: (error) => {
 			console.error("Signup failed:", error);
@@ -117,6 +119,14 @@ export const useUserList = () => {
 	return useQuery({
 		queryKey: ["userList"],
 		queryFn: getUserList,
+	});
+};
+
+/*================== Get Users Who Do not Have a RoomWith Current User Hook ==================*/
+export const useUsersWithoutRoom = () => {
+	return useQuery({
+		queryKey: ["usersWithoutRoom"],
+		queryFn: getUsersWithoutRoom,
 	});
 };
 

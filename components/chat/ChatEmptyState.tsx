@@ -1,7 +1,11 @@
 "use client";
 
+import { useCreateRoom, useRecentRooms } from "@/hooks/useRooms";
 import { motion } from "framer-motion";
 import { Plus, Share2, MessageSquarePlus, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { SelectUserDialog } from "./SelectUserDialog";
 
 const containerVariants = {
 	hidden: { opacity: 0 },
@@ -34,6 +38,46 @@ const floatingVariants = {
 };
 
 export default function ChatEmptyState() {
+	const [showSelectionDialog, setShowSelectionDialog] = useState(false);
+	const [selectionDialogType, setSelectionDialogType] = useState<
+		"person" | "group"
+	>("person");
+
+	const { data: recentRooms, isLoading: isLoadingRooms } = useRecentRooms();
+
+	const roomWithAI = recentRooms?.find((room) => room.is_ai);
+
+	const router = useRouter();
+
+	const { mutateAsync: createRoom, isPending: isCreatingRoom } =
+		useCreateRoom();
+
+	const handleCreateNewChatAI = async () => {
+		if (isLoadingRooms || isCreatingRoom) return;
+		if (roomWithAI) {
+			router.push(`/chat/${roomWithAI.id}`);
+		} else {
+			const response = await createRoom({
+				name: "AI Chat",
+				is_ai: true,
+				chat_type: "ai",
+			});
+			if (response.success && response.roomId)
+				router.push(`/chat/${response.roomId}`);
+		}
+	};
+
+	const handleSelectUser = async (userId: string) => {
+		const response = await createRoom({
+			name: `${selectionDialogType === "person" ? "Direct" : "Group"}`,
+			is_ai: false,
+			chat_type: selectionDialogType,
+			other_user_id: userId,
+		});
+		if (response.success && response.roomId)
+			router.push(`/chat/${response.roomId}`);
+	};
+
 	return (
 		<motion.div
 			variants={containerVariants}
@@ -42,11 +86,11 @@ export default function ChatEmptyState() {
 			className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden"
 		>
 			{/* Gradient Background */}
-			<div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:bg-linear-to-br dark:from-black dark:via-gray-950 dark:to-gray-900 dark:from-gray-950 dark:via-black dark:to-gray-950" />
+			<div className="absolute inset-0 bg-linear-to-br from-gray-50 via-white to-gray-100 dark:bg-linear-to-br dark:from-black dark:via-gray-950 dark:to-gray-900" />
 
 			{/* Radial Gradient Glow */}
 			<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-				<div className="w-96 h-96 bg-gradient-to-r from-indigo-500/10 dark:from-indigo-500/20 via-purple-500/5 dark:via-purple-500/10 to-indigo-500/10 dark:to-indigo-500/20 rounded-full blur-3xl" />
+				<div className="w-96 h-96 bg-linear-to-r from-indigo-500/10 dark:from-indigo-500/20 via-purple-500/5 dark:via-purple-500/10 to-indigo-500/10 dark:to-indigo-500/20 rounded-full blur-3xl" />
 			</div>
 
 			{/* Content */}
@@ -66,7 +110,7 @@ export default function ChatEmptyState() {
 
 				{/* Hero Message */}
 				<motion.div variants={itemVariants} className="mb-2">
-					<h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 dark:from-white via-purple-600 dark:via-indigo-200 to-indigo-600 dark:to-purple-200 bg-clip-text text-transparent mb-3">
+					<h2 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-indigo-600 dark:from-white via-purple-600 dark:via-indigo-200 to-indigo-600 dark:to-purple-200 bg-clip-text text-transparent mb-3">
 						Let&rsquo;s Start Chatting!
 					</h2>
 					<p className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
@@ -84,9 +128,9 @@ export default function ChatEmptyState() {
 					<motion.button
 						whileHover={{ scale: 1.05, y: -2 }}
 						whileTap={{ scale: 0.98 }}
-						// onClick={() => onCreateNewRoom("ai")}
-						// disabled={isCreating}
-						className="group relative flex items-center gap-3 px-8 py-4 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all duration-300 shadow-lg shadow-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/70"
+						onClick={handleCreateNewChatAI}
+						disabled={isCreatingRoom || isLoadingRooms}
+						className="group relative flex items-center gap-2 lg:gap-3 px-4 lg:px-8 py-4 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all duration-300 shadow-lg shadow-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/70"
 					>
 						<Zap className="w-5 h-5 group-hover:animate-pulse" />
 						<span>AI Chat</span>
@@ -95,10 +139,13 @@ export default function ChatEmptyState() {
 					{/* Create Person Chat */}
 					<motion.button
 						whileHover={{ scale: 1.05, y: -2 }}
-						// whileTap={{ scale: 0.98 }}
-						// onClick={() => onCreateNewRoom("person")}
-						// disabled={isCreating}
-						className="group relative flex items-center gap-3 px-8 py-4 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed border border-indigo-300 dark:border-indigo-500/20 hover:border-indigo-400 dark:hover:border-indigo-500/50 rounded-xl font-semibold text-gray-800 dark:text-white transition-all duration-300"
+						whileTap={{ scale: 0.98 }}
+						onClick={() => {
+							setSelectionDialogType("person");
+							setShowSelectionDialog(true);
+						}}
+						disabled={isCreatingRoom || isLoadingRooms}
+						className="group relative flex items-center gap-2 lg:gap-3 px-4 lg:px-8 py-4 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed border border-indigo-300 dark:border-indigo-500/20 hover:border-indigo-400 dark:hover:border-indigo-500/50 rounded-xl font-semibold text-gray-800 dark:text-white transition-all duration-300"
 					>
 						<Plus className="w-5 h-5" />
 						<span>Direct Message</span>
@@ -108,9 +155,12 @@ export default function ChatEmptyState() {
 					<motion.button
 						whileHover={{ scale: 1.05, y: -2 }}
 						whileTap={{ scale: 0.98 }}
-						// onClick={() => onCreateNewRoom("group")}
-						// disabled={isCreating}
-						className="group relative flex items-center gap-3 px-8 py-4 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed border border-purple-300 dark:border-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/50 rounded-xl font-semibold text-gray-800 dark:text-white transition-all duration-300"
+						onClick={() => {
+							setSelectionDialogType("group");
+							setShowSelectionDialog(true);
+						}}
+						disabled={isCreatingRoom || isLoadingRooms}
+						className="group relative flex items-center gap-2 lg:gap-3 px-4 lg:px-8 py-4 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed border border-purple-300 dark:border-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/50 rounded-xl font-semibold text-gray-800 dark:text-white transition-all duration-300"
 					>
 						<Share2 className="w-5 h-5" />
 						<span>Group Chat</span>
@@ -126,6 +176,13 @@ export default function ChatEmptyState() {
 					conversations
 				</motion.p>
 			</div>
+			<SelectUserDialog
+				isOpen={showSelectionDialog}
+				onClose={() => setShowSelectionDialog(false)}
+				type={selectionDialogType}
+				onSelect={handleSelectUser}
+				isLoading={isCreatingRoom}
+			/>
 		</motion.div>
 	);
 }

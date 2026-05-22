@@ -51,7 +51,6 @@ export const getUserList = async (): Promise<MinimalProfile[] | undefined> => {
 		.from("profiles")
 		.select("id, username, full_name, avatar_url");
 	if (error) {
-		console.error("Error fetching user list:", error);
 		return [];
 	}
 	return data;
@@ -121,4 +120,45 @@ export const updateUserAvatar = async (
 	}
 	revalidatePath("/dashboard/profile");
 	return { success: true };
+};
+
+/*================= Get Users Who DO NOT Have a Room With Current User =================*/
+export const getUsersWithoutRoom = async (): Promise<MinimalProfile[]> => {
+	const supabase = await createClient();
+	const user = await getCurrentUser();
+	if (!user) return [];
+
+	// 1. Get rooms current user belongs to
+	const { data: myRooms } = await supabase
+		.from("room_members")
+		.select("room_id")
+		.eq("user_id", user.id);
+
+	const roomIds = myRooms?.map((r) => r.room_id) || [];
+
+	// 2. Get users who share a room with current user
+	const { data: existingPartners } = await supabase
+		.from("room_members")
+		.select(
+			`
+    user_id,
+    room_id,
+    rooms!inner (chat_type)
+  `,
+		)
+		.in("room_id", roomIds)
+		.neq("user_id", user.id)
+		.neq("rooms.chat_type", "group");
+
+	const usersWithRoomIds = existingPartners?.map((p) => p.user_id) || [];
+	// 3. Get all users except:
+	// 1- current user
+	// 2- users in usersWithRoomIds
+	const { data: users } = await supabase
+		.from("profiles")
+		.select("id, username, full_name, avatar_url, is_active")
+		.neq("id", user.id)
+		.not("id", "in", `(${usersWithRoomIds.join(",") || ""})`);
+
+	return (users as MinimalProfile[]) || [];
 };

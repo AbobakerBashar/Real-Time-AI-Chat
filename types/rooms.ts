@@ -1,3 +1,4 @@
+import { MinimalProfile } from "./auth";
 import { Database } from "./supabase";
 
 export type CreateRoomResponse =
@@ -22,6 +23,13 @@ export type Room = Database["public"]["Tables"]["rooms"]["Row"];
 export type MinimalRoom = Pick<Room, "id" | "name" | "is_ai">;
 
 export interface RecentRoom extends MinimalRoom {
-	last_message?: string;
-	last_message_at?: string;
+	last_message?: string | null;
+	last_message_at?: string | null;
+	sent_by_current_user?: boolean;
+}
+
+export interface RoomDetails {
+	name: string;
+	type: "ai" | "person" | "group";
+	members?: MinimalProfile[];
 }

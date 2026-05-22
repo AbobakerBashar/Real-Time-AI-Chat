@@ -1,33 +1,39 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SearchBar = () => {
-	const [searchQuery, setSearchQuery] = useState("");
-
-	const searchParamas = useSearchParams();
+	const searchParams = useSearchParams();
 	const router = useRouter();
+	const pathname = usePathname(); // Good practice to use current path
+
+	const [searchQuery, setSearchQuery] = useState(
+		searchParams.get("search") ?? "",
+	);
 
 	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newQuery = e.target.value;
-		setSearchQuery(newQuery);
+		setSearchQuery(e.target.value);
 	};
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
-			const params = new URLSearchParams(searchParamas.toString());
+			const params = new URLSearchParams(searchParams);
+
 			if (searchQuery) {
 				params.set("search", searchQuery);
 			} else {
 				params.delete("search");
 			}
-			router.push(`?${params.toString()}`);
+
+			router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 		}, 300);
 
 		return () => clearTimeout(timer);
-	}, [searchQuery, router, searchParamas]);
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [searchQuery, router, pathname]);
 
 	return (
 		<div className="px-3 py-4 border-b border-gray-200 dark:border-white/5">

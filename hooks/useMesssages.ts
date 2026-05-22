@@ -1,10 +1,11 @@
-import { getMessages, getRecentRooms } from "@/actions/messagesActions";
+import { getMessages } from "@/actions/messagesActions";
 import {
 	Message,
 	MessageInput,
 	MessageResponse,
 	MinimalMessage,
 } from "@/types/messages";
+import { RecentRoom } from "@/types/rooms";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -18,14 +19,14 @@ export const useGetMessages = (roomId: string) => {
 
 export const useSendMessage = () => {
 	const queryClient = useQueryClient();
+
 	return useMutation({
 		mutationKey: ["sendMessage"],
+
 		mutationFn: async (data: MessageInput) => {
 			const response = await fetch("/api/messages", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
+				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(data),
 			});
 
@@ -37,25 +38,135 @@ export const useSendMessage = () => {
 
 			return result;
 		},
+
 		onSuccess: (data) => {
-			if (!data.data) return;
-			queryClient.setQueryData(
-				["messages", data.data.room_id],
-				(oldMessages: Message[] = []) => [...oldMessages, data.data],
-			);
+			if (!data.data?.id) return;
+
+			const message = data.data;
+			const roomId = message.room_id;
+
+			queryClient.setQueryData<Message[]>(["messages", roomId], (old = []) => {
+				if (old.some((m) => m.id === message.id)) return old;
+
+				return [...old, message];
+			});
+
+			queryClient.setQueryData<RecentRoom[]>(["recent-rooms"], (old = []) => {
+				return old.map((room) =>
+					room.id === roomId
+						? {
+								...room,
+								last_message: data?.data?.content,
+								last_message_at: data?.data?.created_at,
+								sent_by_current_user: true,
+							}
+						: room,
+				);
+			});
 		},
 
-		onError: (error) => {
+		onError: (error: Error) => {
 			toast.error(error.message || "Failed to send message");
 		},
 	});
 };
 
-/*================= Get Recent Messages =================*/
-export const useRecentMessages = (limit: number = 10) => {
-	return useQuery({
-		queryKey: ["recentRooms", limit],
-		queryFn: async () => await getRecentRooms(limit),
-		refetchInterval: 30000,
+/*================= Edit Message =================*/
+export const useEditMessage = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationKey: ["editMessage"],
+		mutationFn: async ({
+			messageId,
+			content,
+		}: {
+			messageId: string;
+			content: string;
+		}) => {
+			const response = await fetch("/api/messages", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ messageId, content }),
+			});
+
+			const result: MessageResponse = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.error || "Failed to edit message");
+			}
+
+			return result;
+		},
+
+		onSuccess: (data) => {
+			if (!data.data?.id || !data.data?.room_id) return;
+
+			const message = data.data;
+			const roomId = message.room_id;
+
+			queryClient.setQueryData<MinimalMessage[]>(
+				["messages", roomId],
+				(old = []) => {
+					return old.map((m) => (m.id === message.id ? message : m));
+				},
+			);
+		},
+
+		onError: (error: Error) => {
+			toast.error(error.message || "Failed to edit message");
+		},
 	});
 };
+
+/*================= Delete Message =================*/
+export const useDeleteMessage = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationKey: ["deleteMessage"],
+		mutationFn: async ({
+			messageId,
+			roomId,
+		}: {
+			messageId: string;
+			roomId: string;
+		}) => {
+			const response = await fetch(`/api/messages?messageId=${messageId}`, {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.error || "Failed to delete message");
+			}
+
+			return result;
+		},
+
+		onSuccess: (_, { messageId, roomId }) => {
+			queryClient.setQueryData<MinimalMessage[]>(
+				["messages", roomId],
+				(old = []) => {
+					return old.filter((m) => m.id !== messageId);
+				},
+			);
+
+			toast.success("Message deleted");
+		},
+
+		onError: (error: Error) => {
+			toast.error(error.message || "Failed to delete message");
+		},
+	});
+};
+
+/*================= Get Recent Messages =================*/
+// export const useRecentMessages = (limit: number = 10) => {
+// 	return useQuery({
+// 		queryKey: ["recent-rooms"],
+// 		queryFn: async () => await getRecentRooms(limit),
+// 	});
+// };

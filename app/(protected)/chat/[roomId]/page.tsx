@@ -24,17 +24,17 @@ export default async function ChatRoomPage({
 				<Sidebar />
 			</div>
 
-			{/* Main Chat Area - adjusted for fixed sidebar */}
+			{/* Main Chat Area */}
 			<div className="flex-1 flex flex-col overflow-hidden w-full md:ml-80">
 				{/* Header */}
 				<Header roomId={roomId} />
 
-				{/* Messages Container - Scrollable */}
+				{/* Messages Container */}
 				<Suspense>
 					<MessagesContainer roomId={roomId} />
 				</Suspense>
 
-				{/* Input Area - Fixed Bottom */}
+				{/* Input Area  */}
 				<InputArea roomId={roomId} />
 			</div>
 		</div>

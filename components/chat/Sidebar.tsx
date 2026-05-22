@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import ConversationsList from "./ConversationsList";
 import SearchBar from "./SearchBar";
 import SidebarContainer from "./SidebarContainer";
-import SidebarFooter from "./SidebarFooter";
+// import SidebarFooter from "./SidebarFooter";
 import SidebarHeader from "./SidebarHeader";
+import SidebarChatPanel from "./SidebarChatPanel";
 
 const Sidebar = ({ isMobile = false }: { isMobile?: boolean }) => {
 	return (
@@ -20,18 +20,18 @@ const Sidebar = ({ isMobile = false }: { isMobile?: boolean }) => {
 				<div className="absolute inset-0 bg-black/0 dark:bg-black/40" />
 
 				{/* Content */}
-				<SidebarContainer>
-					{/* Header Section with Logo */}
-					<SidebarHeader />
-					{/* Search Bar */}
-					<SearchBar />
-					{/* Conversations List */}
-					<Suspense>
-						<ConversationsList />
-					</Suspense>
-					{/* Footer Section */}
-					<SidebarFooter />
-				</SidebarContainer>
+				<Suspense>
+					<SidebarContainer>
+						{/* Header Section with Logo */}
+						<SidebarHeader />
+						{/* Search Bar */}
+						<SearchBar />
+						{/* Conversations List */}
+						<SidebarChatPanel />
+						{/* Footer Section */}
+						{/* <SidebarFooter /> */}
+					</SidebarContainer>
+				</Suspense>
 			</aside>
 		</>
 	);
