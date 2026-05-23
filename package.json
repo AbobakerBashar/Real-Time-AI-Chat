@@ -7,10 +7,11 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint",
-		"gen-types": "supabase gen types typescript --project-id real-time-ai-chat23958@ types/supabase.ts"
+		"types": "supabase gen types typescript --project-id puxgzgbtjxevbzheuazc > types/supabase.ts"
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.4.1",
+		"@google/generative-ai": "^0.24.1",
 		"@supabase/ssr": "^0.10.2",
 		"@supabase/supabase-js": "^2.105.3",
 		"@tanstack/react-query": "^5.100.9",

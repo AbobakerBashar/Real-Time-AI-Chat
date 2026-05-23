@@ -5,12 +5,14 @@ import { MinimalProfile } from "@/types/auth";
 import { RoomDetails } from "@/types/rooms";
 import { motion } from "framer-motion";
 import { Plus, Users2 } from "lucide-react";
+import Link from "next/link";
 
 type ChatHeaderInfoProps = {
 	setIsInviteDialogOpen: (open: boolean) => void;
 	isLoading: boolean;
 	details: RoomDetails | undefined | null;
 	isAddingMember: boolean;
+	roomId: string;
 };
 
 const ChatHeaderInfo = ({
@@ -18,6 +20,7 @@ const ChatHeaderInfo = ({
 	isLoading,
 	details,
 	isAddingMember,
+	roomId,
 }: ChatHeaderInfoProps) => {
 	const { data: currentUser, isLoading: isCurrentUserLoading } =
 		useCurrentUser();
@@ -34,31 +37,33 @@ const ChatHeaderInfo = ({
 
 	return (
 		<div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-			<motion.div
-				whileHover={{ scale: 1.05 }}
-				className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none shrink-0"
-			>
-				{type !== "ai" ? (
-					type === "person" ? (
-						<Avatar>
-							<AvatarFallback>
-								{otherUser && otherUser.full_name
-									? otherUser.full_name.charAt(0).toUpperCase()
-									: "U"}
-							</AvatarFallback>
-							{otherUser?.avatar_url && (
-								<AvatarImage src={otherUser.avatar_url} />
-							)}
-						</Avatar>
+			<Link href={`/chat/${roomId}/manage`}>
+				<motion.div
+					whileHover={{ scale: 1.05 }}
+					className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none shrink-0"
+				>
+					{type !== "ai" ? (
+						type === "person" ? (
+							<Avatar>
+								<AvatarFallback>
+									{otherUser && otherUser.full_name
+										? otherUser.full_name.charAt(0).toUpperCase()
+										: "U"}
+								</AvatarFallback>
+								{otherUser?.avatar_url && (
+									<AvatarImage src={otherUser.avatar_url} />
+								)}
+							</Avatar>
+						) : (
+							<div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none shrink-0">
+								<Users2 className="w-5 h-5" />
+							</div>
+						)
 					) : (
-						<div className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none shrink-0">
-							<Users2 className="w-5 h-5" />
-						</div>
-					)
-				) : (
-					<span className="text-white font-bold text-lg">AI</span>
-				)}
-			</motion.div>
+						<span className="text-white font-bold text-lg">AI</span>
+					)}
+				</motion.div>
+			</Link>
 			<div className="flex-1 min-w-0">
 				{isLoading ? (
 					<div className="w-24 h-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse mb-1" />

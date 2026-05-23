@@ -1,5 +1,6 @@
 import { getMessages } from "@/actions/messagesActions";
 import {
+	Attachment,
 	Message,
 	MessageInput,
 	MessageResponse,
@@ -23,11 +24,37 @@ export const useSendMessage = () => {
 	return useMutation({
 		mutationKey: ["sendMessage"],
 
-		mutationFn: async (data: MessageInput) => {
+		mutationFn: async ({
+			data,
+			attachments,
+		}: {
+			data: MessageInput;
+			attachments?: Attachment[];
+		}) => {
+			const hasAttachments = attachments && attachments.length > 0;
+			let body: BodyInit;
+			let headers: HeadersInit = {};
+
+			if (hasAttachments) {
+				const formData = new FormData();
+				formData.append("content", data.content);
+				formData.append("roomId", data.roomId);
+				formData.append("isAI", String(data.isAI || false));
+
+				attachments.forEach((attachment) => {
+					formData.append("attachments", attachment.file);
+				});
+
+				body = formData;
+			} else {
+				body = JSON.stringify(data);
+				headers = { "Content-Type": "application/json" };
+			}
+
 			const response = await fetch("/api/messages", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(data),
+				headers,
+				body,
 			});
 
 			const result: MessageResponse = await response.json();

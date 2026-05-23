@@ -2,6 +2,19 @@ import { getCurrentUser } from "@/actions/userAction";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+type MessagePayload = {
+	content: string;
+	room_id: string;
+	sender_id: string;
+	is_ai: boolean;
+	attachments?: string[];
+};
+
 export async function POST(request: Request) {
 	try {
 		const user = await getCurrentUser();
@@ -12,17 +25,151 @@ export async function POST(request: Request) {
 			);
 		}
 
-		const { content, roomId, isAI = false } = await request.json();
+		const contentType = request.headers.get("content-type") || "";
+		let content: string;
+		let roomId: string;
+		let isAI: boolean = false;
+		let files: File[] = [];
+
+		// 1. Parse request based on Content-Type
+		if (contentType.includes("multipart/form-data")) {
+			const formData = await request.formData();
+			content = formData.get("content") as string;
+			roomId = formData.get("roomId") as string;
+			isAI = formData.get("isAI") === "true";
+			files = formData.getAll("attachments") as File[];
+		} else {
+			const body = await request.json();
+			content = body.content;
+			roomId = body.roomId;
+			isAI = body.isAI || false;
+		}
+
+		if (!content && files.length === 0) {
+			return NextResponse.json(
+				{ error: "Message content is required", success: false },
+				{ status: 400 },
+			);
+		}
+
+		if (!roomId) {
+			return NextResponse.json(
+				{ error: "Room ID is required", success: false },
+				{ status: 400 },
+			);
+		}
 
 		const supabase = await createClient();
+
+		// 2. Handle File Uploads to Supabase Storage
+		const attachmentUrls: string[] = [];
+
+		if (files.length > 0) {
+			if (isAI) {
+				return NextResponse.json(
+					{
+						error: "Attachments are not allowed in AI messages",
+						success: false,
+					},
+					{ status: 400 },
+				);
+			}
+			for (const file of files) {
+				const fileExt = file.name.split(".").pop();
+
+				const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+				const filePath = `${roomId}/${fileName}`;
+
+				const { error: uploadError } = await supabase.storage
+					.from("attachments")
+					.upload(filePath, file, {
+						contentType: file.type,
+					});
+
+				if (uploadError) {
+					throw new Error(uploadError.message || "Failed to upload file");
+				}
+
+				const { data: publicUrlData } = supabase.storage
+					.from("attachments")
+					.getPublicUrl(filePath);
+
+				attachmentUrls.push(publicUrlData.publicUrl);
+			}
+		}
+
+		const messagePayload: MessagePayload = {
+			content: content,
+			room_id: roomId,
+			sender_id: user.id,
+			is_ai: isAI,
+		};
+
+		if (attachmentUrls.length > 0) {
+			messagePayload.attachments = attachmentUrls;
+		}
+
+		/*==================================================
+    1- AI MESSAGES
+    ===================================================*/
+		if (isAI) {
+			const { data: membership, error: membershipError } = await supabase
+				.from("room_members")
+				.select("*")
+				.eq("user_id", user.id)
+				.eq("room_id", roomId)
+				.single();
+
+			if (membershipError || !membership) {
+				return NextResponse.json(
+					{ error: "Unauthorized. Please join the room first", success: false },
+					{ status: 401 },
+				);
+			}
+
+			// Save user message
+			const { data: userMessage, error: userMessageError } = await supabase
+				.from("messages")
+				.insert({ ...messagePayload, is_ai: false })
+				.select()
+				.single();
+
+			if (userMessageError) {
+				throw new Error(
+					userMessageError.message || "Failed to save user message",
+				);
+			}
+
+			// Generate AI response
+			const result = await model.generateContent(content);
+			const aiMessageContent = result.response.text();
+
+			const { data: aiMessage, error: aiMessageError } = await supabase
+				.from("messages")
+				.insert({
+					content: aiMessageContent,
+					room_id: roomId,
+					is_ai: true,
+				})
+				.select()
+				.single();
+
+			if (aiMessageError) {
+				throw new Error(aiMessageError.message || "Failed to save AI message");
+			}
+
+			return NextResponse.json(
+				{ success: true, userMessage, aiMessage },
+				{ status: 201 },
+			);
+		}
+
+		/*==================================================
+    2- NORMAL MESSAGES
+    ===================================================*/
 		const { data, error } = await supabase
 			.from("messages")
-			.insert({
-				content: content,
-				room_id: roomId,
-				sender_id: user.id,
-				is_ai: isAI,
-			})
+			.insert(messagePayload)
 			.select()
 			.single();
 

@@ -69,6 +69,7 @@ const Header = ({ roomId }: { roomId: string }) => {
 					isLoading={isLoadingDetails}
 					details={details}
 					isAddingMember={isAddingMember}
+					roomId={roomId}
 				/>
 
 				<ChatHeaderActions />

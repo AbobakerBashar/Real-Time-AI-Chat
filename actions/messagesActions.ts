@@ -12,7 +12,7 @@ export const getMessages = async (
 	const supabase = await createClient();
 	const { data, error } = await supabase
 		.from("messages")
-		.select("id, content, created_at, is_ai, sender_id")
+		.select("id, content, created_at, is_ai, sender_id, attachments")
 		.eq("room_id", roomId)
 		.order("created_at", { ascending: true });
 
