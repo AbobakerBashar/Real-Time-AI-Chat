@@ -123,6 +123,7 @@ export const updateUserAvatar = async (
 };
 
 /*================= Get Users Who DO NOT Have a Room With Current User =================*/
+
 export const getUsersWithoutRoom = async (): Promise<MinimalProfile[]> => {
 	const supabase = await createClient();
 	const user = await getCurrentUser();
@@ -151,14 +152,47 @@ export const getUsersWithoutRoom = async (): Promise<MinimalProfile[]> => {
 		.neq("rooms.chat_type", "group");
 
 	const usersWithRoomIds = existingPartners?.map((p) => p.user_id) || [];
+
+	// const { data: withRooms, error: withRoomsError } = await supabase
+	// 	.from("profiles")
+	// 	.select("id, username, full_name, avatar_url, is_active")
+	// 	.in("id", usersWithRoomIds)
+	// 	.neq("id", user.id);
+	// if (withRoomsError) throw new Error(withRoomsError.message);
+
 	// 3. Get all users except:
 	// 1- current user
 	// 2- users in usersWithRoomIds
-	const { data: users } = await supabase
+	const { data: users, error: usersError } = await supabase
 		.from("profiles")
 		.select("id, username, full_name, avatar_url, is_active")
 		.neq("id", user.id)
 		.not("id", "in", `(${usersWithRoomIds.join(",") || ""})`);
+	if (usersError) throw new Error(usersError.message);
+
+	return (users as MinimalProfile[]) || [];
+};
+
+export const getNonGroupUsers = async (
+	roomId: string,
+): Promise<MinimalProfile[]> => {
+	const supabase = await createClient();
+	const user = await getCurrentUser();
+	if (!user) return [];
+
+	const { data: members, error } = await supabase
+		.from("room_members")
+		.select("user_id")
+		.eq("room_id", roomId);
+	if (error) throw new Error(error.message);
+	const memberIds = members?.map((m) => m.user_id) || [];
+
+	const { data: users, error: usersError } = await supabase
+		.from("profiles")
+		.select("id, username, full_name, avatar_url, is_active")
+		.neq("id", user.id)
+		.not("id", "in", `(${memberIds.join(",") || ""})`);
+	if (usersError) throw new Error(usersError.message);
 
 	return (users as MinimalProfile[]) || [];
 };

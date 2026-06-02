@@ -2,7 +2,6 @@
 
 import { useUsersWithoutRoom } from "@/hooks/useAuth";
 import { useRecentRooms } from "@/hooks/useRooms";
-import { useSidebarRealtime } from "@/hooks/useSidebarRealtime";
 import { Clock } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
@@ -25,8 +24,6 @@ const SidebarChatPanel = () => {
 		? (type as "person" | "group" | "recent" | "ai")
 		: "recent";
 
-	useSidebarRealtime();
-
 	// Filter rooms by type
 	const filteredRooms = useMemo(() => {
 		if (!searchQuery.trim() && filterType === "recent") return recentRooms;
@@ -36,11 +33,11 @@ const SidebarChatPanel = () => {
 				room.name?.toLowerCase().includes(searchQuery.toLowerCase()),
 			);
 		} else if (filterType === "person") {
-			return recentRooms.filter((room) => room.name === "Direct");
+			return recentRooms.filter((room) => room.chat_type === "person");
 		} else if (filterType === "group") {
-			return recentRooms.filter((room) => room.name === "Group");
+			return recentRooms.filter((room) => room.chat_type === "group");
 		} else if (filterType === "ai") {
-			return recentRooms.filter((room) => room.is_ai);
+			return recentRooms.filter((room) => room.chat_type === "ai");
 		} else return recentRooms;
 	}, [recentRooms, filterType, searchQuery]);
 

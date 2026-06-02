@@ -1,10 +1,11 @@
 "use client";
 
+import { updateRoomLastMessage } from "@/actions/messagesActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSendMessage } from "@/hooks/useMesssages";
-import { useGetRoomDetails } from "@/hooks/useRooms";
 import { Attachment } from "@/types/messages";
+import { RoomDetails } from "@/types/rooms";
 import { formatFileSize, getFileType } from "@/utils/send-message";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -49,15 +50,15 @@ const getFileIcon = (type: Attachment["type"]) => {
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const MAX_ATTACHMENTS = 5;
 
-const InputArea = ({ roomId }: { roomId: string }) => {
+const InputArea = ({ details }: { details: RoomDetails | null }) => {
 	const [inputValue, setInputValue] = useState("");
 	const [attachments, setAttachments] = useState<Attachment[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
+	const roomId = details?.id || "";
+
 	const { mutateAsync: sendMessage, isPending: isSendingMessage } =
 		useSendMessage();
-	const { data: details, isLoading: isLoadingDetails } =
-		useGetRoomDetails(roomId);
 
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = e.currentTarget.files;
@@ -106,7 +107,7 @@ const InputArea = ({ roomId }: { roomId: string }) => {
 
 	const handleSendMessage = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (isSendingMessage || isLoadingDetails) return;
+		if (isSendingMessage || !roomId) return;
 		if (!inputValue.trim() && attachments.length === 0) return;
 
 		const result = await sendMessage({
@@ -121,6 +122,7 @@ const InputArea = ({ roomId }: { roomId: string }) => {
 		if (result.success) {
 			setInputValue("");
 			setAttachments([]);
+			await updateRoomLastMessage(roomId, inputValue);
 
 			for (const attachment of attachments) {
 				if (attachment.preview) {

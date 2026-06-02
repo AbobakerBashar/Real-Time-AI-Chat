@@ -72,7 +72,9 @@ export interface Member {
 	username: string | null;
 	full_name: string | null;
 	avatar_url: string | null;
-	is_active: boolean;
+	is_active?: boolean;
+	role?: "admin" | "member" | "owner";
+	joined_at?: string;
 }
 
 export type UpdateProfileInput = {

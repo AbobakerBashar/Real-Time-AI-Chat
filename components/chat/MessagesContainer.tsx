@@ -21,9 +21,9 @@ import {
 import { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "../ui/button";
-import { useGetRoomDetails } from "@/hooks/useRooms";
 import { MinimalProfile } from "@/types/auth";
 import Image from "next/image";
+import { RoomDetails } from "@/types/rooms";
 
 const messageVariants = {
 	hidden: { opacity: 0, y: 20, scale: 0.8 },
@@ -101,12 +101,11 @@ const getFileNameFromUrl = (url: string): string => {
 	}
 };
 
-const MessagesContainer = ({ roomId }: { roomId: string }) => {
+const MessagesContainer = ({ details }: { details: RoomDetails | null }) => {
+	const roomId = details?.id || "";
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const { data: messages, isLoading } = useGetMessages(roomId);
 	const { data: currentUser } = useCurrentUser();
-	const { data: details, isLoading: isLoadingDetails } =
-		useGetRoomDetails(roomId);
 	const members: MinimalProfile[] = details?.members || [];
 
 	// Set up real-time updates for messages in this room
@@ -280,7 +279,7 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 																	// Audio Player
 																	<div className="w-full bg-current bg-opacity-5 rounded-lg p-3 border border-current border-opacity-20 hover:border-opacity-40 transition-all">
 																		<div className="flex items-center gap-2 mb-2">
-																			<Music className="w-4 h-4 flex-shrink-0" />
+																			<Music className="w-4 h-4 shrink-0" />
 																			<span className="text-xs truncate flex-1">
 																				{fileName}
 																			</span>
@@ -307,7 +306,7 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 																	// Video Player
 																	<div className="w-full bg-current bg-opacity-5 rounded-lg p-3 border border-current border-opacity-20 hover:border-opacity-40 transition-all">
 																		<div className="flex items-center gap-2 mb-2">
-																			<Video className="w-4 h-4 flex-shrink-0" />
+																			<Video className="w-4 h-4 shrink-0" />
 																			<span className="text-xs truncate flex-1">
 																				{fileName}
 																			</span>
@@ -339,7 +338,7 @@ const MessagesContainer = ({ roomId }: { roomId: string }) => {
 																		className="flex flex-col items-start w-full rounded-lg bg-current bg-opacity-5 hover:bg-opacity-10 border border-current border-opacity-20 hover:border-opacity-40 transition-all p-3 group cursor-pointer"
 																	>
 																		<div className="flex items-center gap-2 w-full">
-																			<div className="flex items-center justify-center w-8 h-8 rounded-full bg-current bg-opacity-10 flex-shrink-0 group-hover:bg-opacity-20 transition-colors">
+																			<div className="flex items-center justify-center w-8 h-8 rounded-full bg-current bg-opacity-10 shrink-0 group-hover:bg-opacity-20 transition-colors">
 																				{getFileIcon(fileType)}
 																			</div>
 																			<span className="text-xs truncate flex-1">

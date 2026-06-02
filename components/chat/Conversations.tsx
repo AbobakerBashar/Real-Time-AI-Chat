@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { RecentRoom } from "@/types/rooms";
 import { getTimeAgo } from "@/utils/formatTime";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const Conversations = ({ rooms }: { rooms: RecentRoom[] }) => {
 	const pathname = usePathname();
@@ -25,13 +26,27 @@ const Conversations = ({ rooms }: { rooms: RecentRoom[] }) => {
 									: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
 							}`}
 						>
-							<div className="flex items-start gap-2.5">
+							<div className="flex items-center gap-2.5">
 								{/* Icon */}
 								<div className="mt-1 shrink-0">
-									{room.is_ai ? (
+									{room.chat_type === "ai" ? (
 										<div className="w-2 h-2 bg-indigo-500 rounded-full" />
 									) : (
-										<div className="w-2 h-2 bg-green-500 rounded-full" />
+										<Avatar className="w-8 h-8">
+											{room.avatar_url && (
+												<AvatarImage
+													src={room.avatar_url}
+													alt={room.name || "Avatar"}
+												/>
+											)}
+											<AvatarFallback>
+												{room.chat_type === "group"
+													? "👥"
+													: room.name
+														? room.name.charAt(0).toUpperCase()
+														: "👤"}
+											</AvatarFallback>
+										</Avatar>
 									)}
 								</div>
 
@@ -39,8 +54,10 @@ const Conversations = ({ rooms }: { rooms: RecentRoom[] }) => {
 								<div className="flex-1 min-w-0">
 									<div className="flex items-baseline gap-2 justify-between">
 										<p className="font-medium text-sm truncate">
-											{room.name}
-											{!room.is_ai && (
+											{room.chat_type === "group"
+												? room.name || "Unnamed Group"
+												: room.username || room.full_name || "Unnamed Chat"}
+											{room.chat_type !== "ai" && (
 												<span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
 													{room.sent_by_current_user ? "(You)" : ""}
 												</span>

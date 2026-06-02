@@ -71,7 +71,12 @@ export default function SignupPage() {
 			toast.error("Passwords do not match!");
 			return;
 		}
-		// Simulate API call
+
+		if (password.trim().length < 6) {
+			toast.error("Password must be at least 6 characters long!");
+			return;
+		}
+
 		const result = await signup({
 			email,
 			password,

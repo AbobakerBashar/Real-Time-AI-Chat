@@ -33,15 +33,13 @@ const MobileHeader = () => {
 		>
 			<header className="flex items-center justify-between gap-3">
 				{/* Mobile Menu Button */}
-				<Button
-					variant="ghost"
-					size="sm"
-					className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+				<button
+					className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors p-2 rounded-md"
 					onClick={() => setIsMobileMenuOpen(true)}
 					title="Open conversations"
 				>
-					<Menu className="w-5 h-5" />
-				</Button>
+					<Menu className="w-6 h-6" />
+				</button>
 
 				<Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
 					{/* <SheetHeader className="relative z-50" /> */}

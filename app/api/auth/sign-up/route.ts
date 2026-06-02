@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 		});
 
 		if (error) {
-			throw error;
+			throw new Error(error.message);
 		}
 		return NextResponse.json(
 			{
@@ -28,15 +28,28 @@ export async function POST(request: Request) {
 			{ status: 200 },
 		);
 	} catch (error) {
-		return new NextResponse(
-			JSON.stringify({
-				error: "Failed to sign up",
-				success: false,
-			}),
-			{
-				status: 500,
-				headers: { "Content-Type": "application/json" },
-			},
-		);
+		if (error instanceof Error) {
+			return new NextResponse(
+				JSON.stringify({
+					error: error.message,
+					success: false,
+				}),
+				{
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+		} else {
+			return new NextResponse(
+				JSON.stringify({
+					error: "An unknown error occurred",
+					success: false,
+				}),
+				{
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+		}
 	}
 }

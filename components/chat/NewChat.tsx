@@ -55,7 +55,6 @@ const NewChat = ({ users }: { users: MinimalProfile[] | undefined }) => {
 					is_ai: false,
 					other_user_id: userId,
 				});
-				toast.success("Chat created successfully!");
 				router.push(`/chat/${newRoomId.roomId}`);
 			}
 		}
@@ -164,7 +163,7 @@ const NewChat = ({ users }: { users: MinimalProfile[] | undefined }) => {
 					</p>
 				) : (
 					<p className="text-sm text-gray-500 dark:text-gray-400 px-2">
-						{searchQuery ? "No users found" : "No users yet. Start a new chat!"}
+						{searchQuery ? "No users found" : "No users available."}
 					</p>
 				)
 			) : (

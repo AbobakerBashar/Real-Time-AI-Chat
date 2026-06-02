@@ -1,10 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { Member, RawMember } from "@/types/auth";
+import { Member } from "@/types/auth";
 import { MinimalMessage } from "@/types/messages";
 import { getCurrentUser } from "./userAction";
-import { RecentRoom, RoomDetails } from "@/types/rooms";
+import { RecentRoom } from "@/types/rooms";
+import { revalidatePath } from "next/cache";
 
 export const getMessages = async (
 	roomId: string,
@@ -22,169 +23,154 @@ export const getMessages = async (
 };
 
 /*================= Get Room Members =================*/
-export const getRoomMembers = async (
-	roomId: string,
-): Promise<Member[] | undefined> => {
-	const supabase = await createClient();
-	const { data, error } = await supabase
-		.from("room_members")
-		.select("profiles(id, username, full_name, avatar_url, is_active)")
-		.eq("room_id", roomId);
+// export const getRoomMembers = async (
+// 	roomId: string,
+// ): Promise<Member[] | undefined> => {
+// 	const supabase = await createClient();
+// 	const { data, error } = await supabase
+// 		.from("room_members")
+// 		.select("profiles(id, username, full_name, avatar_url, is_active)")
+// 		.eq("room_id", roomId);
 
-	if (error) throw error;
+// 	if (error) throw error;
 
-	const members = (data as RawMember[])
-		.map((member) => {
-			const profile = Array.isArray(member.profiles)
-				? member.profiles[0]
-				: member.profiles;
+// 	const members = (data as RawMember[])
+// 		.map((member) => {
+// 			const profile = Array.isArray(member.profiles)
+// 				? member.profiles[0]
+// 				: member.profiles;
 
-			if (!profile) return null;
+// 			if (!profile) return null;
 
-			return {
-				id: profile.id,
-				username: profile.username,
-				full_name: profile.full_name,
-				avatar_url: profile.avatar_url,
-				is_active: profile.is_active,
-			};
-		})
-		.filter((m): m is Member => m !== null);
+// 			return {
+// 				id: profile.id,
+// 				username: profile.username,
+// 				full_name: profile.full_name,
+// 				avatar_url: profile.avatar_url,
+// 				is_active: profile.is_active,
+// 			};
+// 		})
+// 		.filter((m): m is Member => m !== null);
 
-	return members;
-};
+// 	return members;
+// };
 
 /*================= Get Recent Rooms =================*/
 export const getRecentRooms = async (
 	limit: number = 10,
-): Promise<RecentRoom[] | undefined> => {
+): Promise<RecentRoom[]> => {
 	const supabase = await createClient();
 
 	const user = await getCurrentUser();
 
 	if (!user) return [];
 
-	// Get rooms where the user is a member, ordered by latest message
-	const { data: rooms, error: roomsError } = await supabase
+	const { data: memberships, error } = await supabase
 		.from("room_members")
-		.select("room_id, rooms(name, is_ai)")
+		.select(
+			`
+      room_id,
+      rooms (
+        id,
+        name,
+        chat_type,
+        avatar_url,
+        last_message,
+        last_message_at,
+        last_sender_id
+      )
+    `,
+		)
 		.eq("user_id", user.id);
 
-	if (roomsError) {
-		console.error("Error fetching rooms:", roomsError);
+	if (error) {
+		console.error(error);
 		return [];
 	}
 
-	// Extract and format room data with latest message
-	const formattedRooms = await Promise.all(
-		(rooms || []).map(async (item) => {
-			if (!item.room_id) return null;
+	const rooms = await Promise.all(
+		(memberships ?? []).map(async (membership): Promise<RecentRoom | null> => {
+			const room = Array.isArray(membership.rooms)
+				? membership.rooms[0]
+				: membership.rooms;
 
-			// Get the latest message in this room
-			const { data: latestMessage } = await supabase
-				.from("messages")
-				.select("content, created_at, sender_id")
-				.eq("room_id", item.room_id)
-				.order("created_at", { ascending: false })
-				.limit(1)
-				.maybeSingle();
+			if (!room) return null;
 
-			const roomInfo = item.rooms?.[0] || item.rooms;
+			let profileInfo: Member | undefined;
+
+			if (room.chat_type === "person") {
+				const { data: otherMember } = await supabase
+					.from("room_members")
+					.select(
+						`
+            profiles (
+              id,
+              username,
+              full_name,
+              avatar_url,
+              is_active
+            )
+          `,
+					)
+					.eq("room_id", room.id)
+					.neq("user_id", user.id)
+					.maybeSingle();
+
+				profileInfo = Array.isArray(otherMember?.profiles)
+					? otherMember.profiles[0]
+					: otherMember?.profiles;
+			}
 
 			return {
-				id: item.room_id,
-				name: roomInfo?.name,
-				is_ai: roomInfo?.is_ai,
-				last_message: latestMessage?.content,
-				last_message_at: latestMessage?.created_at,
-				sent_by_current_user: latestMessage?.sender_id === user.id,
+				id: room.id,
+
+				name: room.chat_type === "person" ? profileInfo?.full_name : room.name,
+
+				chat_type: room.chat_type,
+
+				username: profileInfo?.username,
+
+				avatar_url:
+					room.chat_type === "person"
+						? profileInfo?.avatar_url
+						: room.avatar_url,
+
+				is_active: profileInfo?.is_active,
+
+				last_message: room.last_message,
+
+				last_message_at: room.last_message_at,
+
+				sent_by_current_user: room.last_sender_id === user.id,
 			};
 		}),
 	);
 
-	return formattedRooms?.filter((room) => room !== null).slice(0, limit);
+	return rooms
+		.filter((room): room is RecentRoom => room !== null)
+		.sort(
+			(a, b) =>
+				new Date(b?.last_message_at ?? 0).getTime() -
+				new Date(a?.last_message_at ?? 0).getTime(),
+		)
+		.slice(0, limit);
 };
 
-/*================= Get Room Details =================*/
-export const getRoomDetails = async (
+export const updateRoomLastMessage = async (
 	roomId: string,
-): Promise<RoomDetails | null> => {
+	message: string,
+) => {
 	const supabase = await createClient();
-
-	const { data: room, error: roomError } = await supabase
+	const user = await getCurrentUser();
+	if (!user) return;
+	await supabase
 		.from("rooms")
-		.select("name, chat_type")
-		.eq("id", roomId)
-		.maybeSingle();
-	if (roomError) throw roomError;
-	if (!room) return null;
-
-	if (room.chat_type === "group") {
-		const { data: members, error: membersError } = await supabase
-			.from("room_members")
-			.select("profiles(id, username, full_name, avatar_url)")
-			.eq("room_id", roomId);
-		if (membersError) throw membersError;
-
-		const formattedMembers = (members || [])
-			.map((member) => {
-				const profile = Array.isArray(member.profiles)
-					? member.profiles[0]
-					: member.profiles;
-
-				if (!profile) return null;
-
-				return {
-					id: profile.id,
-					username: profile.username,
-					full_name: profile.full_name,
-					avatar_url: profile.avatar_url,
-				};
-			})
-			.filter((m): m is Member => m !== null);
-
-		return {
-			name: room.name,
-			type: room.chat_type,
-			members: formattedMembers,
-		};
-	} else if (room.chat_type === "ai") {
-		return {
-			name: room.name,
-			type: room.chat_type,
-		};
-	} else if (room.chat_type === "person") {
-		// For person-to-person chats, we can fetch the other member's details
-		const { data: members, error: membersError } = await supabase
-			.from("room_members")
-			.select("profiles(id, username, full_name, avatar_url)")
-			.eq("room_id", roomId);
-		if (membersError) throw membersError;
-		const formattedMembers = (members || [])
-			.map((member) => {
-				const profile = Array.isArray(member.profiles)
-					? member.profiles[0]
-					: member.profiles;
-
-				if (!profile) return null;
-
-				return {
-					id: profile.id,
-					username: profile.username,
-					full_name: profile.full_name,
-					avatar_url: profile.avatar_url,
-				};
-			})
-			.filter((m): m is Member => m !== null);
-
-		return {
-			name: room.name,
-			type: room.chat_type,
-			members: formattedMembers,
-		};
-	} else {
-		return null;
-	}
+		.update({
+			last_message: message,
+			last_message_at: new Date().toISOString(),
+			last_sender_id: user.id,
+		})
+		.eq("id", roomId);
 };
 
 //*================= Get AI Room =================*/
@@ -195,7 +181,7 @@ export const getAIRoom = async (): Promise<RecentRoom | null> => {
 	const supabase = await createClient();
 	const { data, error } = await supabase
 		.from("rooms")
-		.select("id, name, is_ai")
+		.select("id, name, chat_type")
 		.eq("is_ai", true)
 		.eq("created_by", user.id)
 		.maybeSingle();
@@ -205,4 +191,20 @@ export const getAIRoom = async (): Promise<RecentRoom | null> => {
 	return data;
 };
 
-/*=================   =================*/
+/*================= Update Group Details =================*/
+export const updateGroupDetails = async ({
+	roomId,
+	updates,
+}: {
+	roomId: string;
+	updates: {
+		name?: string;
+		bio?: string;
+	};
+}) => {
+	const supabase = await createClient();
+	await supabase.from("rooms").update(updates).eq("id", roomId);
+	revalidatePath(`/chat`);
+	revalidatePath(`/chat/${roomId}`);
+	revalidatePath(`/chat/${roomId}/manage`);
+};

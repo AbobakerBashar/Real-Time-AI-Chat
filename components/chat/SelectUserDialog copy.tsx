@@ -13,7 +13,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Conversations from "./Conversations";
 import { motion } from "framer-motion";
-import { ScrollArea } from "../ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export interface SelectionDialogProps {
@@ -195,55 +194,53 @@ export default function SelectUserDialog({
 					</p>
 				)}
 
-				<ScrollArea className="flex-1 mb-4 pr-2">
-					<div className="space-y-2">
-						{createNew ? (
-							type === "group" ? (
-								<form
-									onSubmit={(e) => {
-										e.preventDefault();
-										handleCreateRoom();
-									}}
-									className="space-y-4"
-								>
-									<input
-										type="text"
-										value={groupName}
-										placeholder="Group Name"
-										onChange={(e) => setGroupName(e.target.value)}
-										required
-										autoFocus
-										autoComplete="off"
-										className="w-full px-4 py-1.5 bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 focus:border-indigo-500 dark:focus:border-indigo-500/50 focus:bg-white dark:focus:bg-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
-										style={{ colorScheme: "light dark" }}
-									/>
-									<Button
-										type="submit"
-										disabled={isCreatingRoom}
-										size="lg"
-										className="bg-indigo-600 w-full text-white rounded-lg font-medium hover:bg-indigo-700"
-									>
-										{isCreatingRoom ? (
-											<>
-												<Loader2 className="h-3 w-3 animate-spin" />
-												Creating...
-											</>
-										) : (
-											"Create Group Chat"
-										)}
-									</Button>
-								</form>
-							) : (
-								<UsersList
-									users={filteredUsers}
-									handleCreateRoom={handleCreateRoom}
+				<div className="flex-1 overflow-y-auto space-y-2 mb-4">
+					{createNew ? (
+						type === "group" ? (
+							<form
+								onSubmit={(e) => {
+									e.preventDefault();
+									handleCreateRoom();
+								}}
+								className="space-y-4"
+							>
+								<input
+									type="text"
+									value={groupName}
+									placeholder="Group Name"
+									onChange={(e) => setGroupName(e.target.value)}
+									required
+									autoFocus
+									autoComplete="off"
+									className="w-full px-4 py-1.5 bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20 focus:border-indigo-500 dark:focus:border-indigo-500/50 focus:bg-white dark:focus:bg-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+									style={{ colorScheme: "light dark" }}
 								/>
-							)
+								<Button
+									type="submit"
+									disabled={isCreatingRoom}
+									size="lg"
+									className="bg-indigo-600 w-full text-white rounded-lg font-medium hover:bg-indigo-700"
+								>
+									{isCreatingRoom ? (
+										<>
+											<Loader2 className="h-3 w-3 animate-spin" />
+											Creating...
+										</>
+									) : (
+										"Create Group Chat"
+									)}
+								</Button>
+							</form>
 						) : (
-							<Conversations rooms={filteredRooms} />
-						)}
-					</div>
-				</ScrollArea>
+							<UsersList
+								users={filteredUsers}
+								handleCreateRoom={handleCreateRoom}
+							/>
+						)
+					) : (
+						<Conversations rooms={filteredRooms} />
+					)}
+				</div>
 
 				<div className="flex gap-2">
 					<Button

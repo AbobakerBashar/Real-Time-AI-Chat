@@ -1,4 +1,4 @@
-import { MinimalProfile } from "./auth";
+import { Member } from "./auth";
 import { Database } from "./supabase";
 
 export type CreateRoomResponse =
@@ -20,16 +20,25 @@ export interface CreateRoomInput {
 	other_user_id?: string;
 }
 export type Room = Database["public"]["Tables"]["rooms"]["Row"];
-export type MinimalRoom = Pick<Room, "id" | "name" | "is_ai">;
+export type MinimalRoom = Pick<Room, "id" | "name" | "chat_type">;
 
 export interface RecentRoom extends MinimalRoom {
 	last_message?: string | null;
 	last_message_at?: string | null;
 	sent_by_current_user?: boolean;
+	username?: string | null;
+	full_name?: string | null;
+	avatar_url?: string | null;
+	is_active?: boolean;
 }
 
 export interface RoomDetails {
+	id: string;
 	name: string;
 	type: "ai" | "person" | "group";
-	members?: MinimalProfile[];
+	members?: Member[];
+	current_user?: {
+		id: string;
+		role: "admin" | "member" | "owner";
+	};
 }

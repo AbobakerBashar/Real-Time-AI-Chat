@@ -1,35 +1,21 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import AddMememberBtn from "@/components/chat/AddMemberBtn";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { MinimalProfile } from "@/types/auth";
-import { RoomDetails } from "@/types/rooms";
 import { motion } from "framer-motion";
 import { Plus, Users2 } from "lucide-react";
 import Link from "next/link";
+import { RoomDetails } from "@/types/rooms";
 
-type ChatHeaderInfoProps = {
-	setIsInviteDialogOpen: (open: boolean) => void;
-	isLoading: boolean;
-	details: RoomDetails | undefined | null;
-	isAddingMember: boolean;
-	roomId: string;
-};
-
-const ChatHeaderInfo = ({
-	setIsInviteDialogOpen,
-	isLoading,
-	details,
-	isAddingMember,
-	roomId,
-}: ChatHeaderInfoProps) => {
-	const { data: currentUser, isLoading: isCurrentUserLoading } =
-		useCurrentUser();
+const ChatHeaderInfo = ({ details }: { details: RoomDetails | null }) => {
+	const { data: currentUser, isLoading } = useCurrentUser();
 
 	const type = details?.type;
 	const groupName = type === "group" ? details?.name : "Group";
+	const roomId = details?.id;
 
 	const otherUser: MinimalProfile | undefined =
-		type === "person" && !isCurrentUserLoading
+		type === "person" && !isLoading
 			? details?.members?.find((m) => m.id !== currentUser?.id)
 			: undefined;
 
@@ -40,7 +26,7 @@ const ChatHeaderInfo = ({
 			<Link href={`/chat/${roomId}/manage`}>
 				<motion.div
 					whileHover={{ scale: 1.05 }}
-					className="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none shrink-0"
+					className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-linear-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 flex items-center justify-center select-none shrink-0"
 				>
 					{type !== "ai" ? (
 						type === "person" ? (
@@ -75,20 +61,18 @@ const ChatHeaderInfo = ({
 									? otherUser?.username || otherUser?.full_name
 									: groupName}
 							</h1>
-							{type === "group" && (
-								<Button
+							{type === "group" && (details?.current_user?.role==="owner"||details?.current_user?.role==="admin") && (
+								<AddMememberBtn
+									roomId={roomId || ""}
 									variant="outline"
 									size="xs"
 									className="shrink-0 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-colors"
-									onClick={() => setIsInviteDialogOpen(true)}
-									title="Add member to group"
-									disabled={isAddingMember}
 								>
 									<Plus className="w-4 h-4" />
 									<span className="hidden sm:inline text-xs font-medium ml-1">
 										Add
 									</span>
-								</Button>
+								</AddMememberBtn>
 							)}
 						</div>
 						{type === "person" && (

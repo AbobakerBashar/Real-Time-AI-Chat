@@ -115,18 +115,21 @@ export type Database = {
         Row: {
           id: string
           joined_at: string | null
+          role: string
           room_id: string | null
           user_id: string | null
         }
         Insert: {
           id?: string
           joined_at?: string | null
+          role?: string
           room_id?: string | null
           user_id?: string | null
         }
         Update: {
           id?: string
           joined_at?: string | null
+          role?: string
           room_id?: string | null
           user_id?: string | null
         }
@@ -149,27 +152,42 @@ export type Database = {
       }
       rooms: {
         Row: {
+          avatar_url: string | null
           chat_type: string
           created_at: string | null
           created_by: string | null
+          description: string | null
           id: string
           is_ai: boolean | null
+          last_message: string | null
+          last_message_at: string | null
+          last_sender_id: string | null
           name: string | null
         }
         Insert: {
+          avatar_url?: string | null
           chat_type?: string
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           is_ai?: boolean | null
+          last_message?: string | null
+          last_message_at?: string | null
+          last_sender_id?: string | null
           name?: string | null
         }
         Update: {
+          avatar_url?: string | null
           chat_type?: string
           created_at?: string | null
           created_by?: string | null
+          description?: string | null
           id?: string
           is_ai?: boolean | null
+          last_message?: string | null
+          last_message_at?: string | null
+          last_sender_id?: string | null
           name?: string | null
         }
         Relationships: []

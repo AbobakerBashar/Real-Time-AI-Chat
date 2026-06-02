@@ -44,7 +44,6 @@ export const useSignup = () => {
 			queryClient.invalidateQueries({ queryKey: ["usersWithoutRoom"] });
 		},
 		onError: (error) => {
-			console.error("Signup failed:", error);
 			toast.error(error.message || "Signup failed. Please try again.");
 		},
 	});
@@ -75,7 +74,6 @@ export const useSignIn = () => {
 			toast.success("Successfully signed in! Welcome back.");
 		},
 		onError: (error) => {
-			console.error("Sign in failed:", error);
 			toast.error(error.message || "Sign in failed. Please try again.");
 		},
 	});

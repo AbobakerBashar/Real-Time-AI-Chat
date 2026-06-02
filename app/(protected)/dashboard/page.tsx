@@ -164,7 +164,7 @@ export default function DashboardrPage() {
 											<div className="flex items-start gap-4">
 												{/* Icon */}
 												<div className="mt-1 shrink-0">
-													{room.is_ai ? (
+													{room.chat_type === "ai" ? (
 														<div className="w-3 h-3 bg-indigo-500 rounded-full" />
 													) : (
 														<div className="w-3 h-3 bg-green-500 rounded-full" />
