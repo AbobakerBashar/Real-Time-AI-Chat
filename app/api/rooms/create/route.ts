@@ -113,7 +113,7 @@ export async function POST(request: Request) {
 		if (chat_type === "group") {
 			const { error: memberError } = await supabase
 				.from("room_members")
-				.insert({ room_id: room.id, user_id: user.id });
+				.insert({ room_id: room.id, user_id: user.id, role: "owner" });
 
 			if (memberError) throw new Error(memberError.message);
 

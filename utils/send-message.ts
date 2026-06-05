@@ -14,8 +14,11 @@ export const getFileType = (file: File): Attachment["type"] => {
 
 export const formatFileSize = (bytes: number): string => {
 	if (bytes === 0) return "0 Bytes";
+
+	const units = ["Bytes", "KB", "MB", "GB", "TB"];
 	const k = 1024;
-	const sizes = ["Bytes", "KB", "MB"];
+
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
-	return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+
+	return `${(bytes / Math.pow(k, i)).toFixed(2)} ${units[i]}`;
 };

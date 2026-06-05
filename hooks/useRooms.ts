@@ -1,12 +1,11 @@
-import {
-	getAIRoom,
-	getRecentRooms,
-	updateGroupDetails,
-} from "@/actions/messagesActions";
+import { getAIRoom, getRecentRooms } from "@/actions/messagesActions";
 import {
 	addUsersToGroup,
+	deleteRoom,
 	leaveRoom,
 	removeMemeber,
+	updateGroupAvatar,
+	updateGroupDetails,
 	updateMemberRole,
 } from "@/actions/room";
 import { getNonGroupUsers } from "@/actions/userAction";
@@ -34,7 +33,7 @@ export const useCreateRoom = () => {
 			return result;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["rooms"] });
+			queryClient.invalidateQueries({ queryKey: ["recent-rooms"] });
 		},
 		onError: (error) => {
 			toast.error(
@@ -46,34 +45,7 @@ export const useCreateRoom = () => {
 	});
 };
 
-/*================= Get Room Members =================*/
-// export const useGetRoomMembers = (roomId: string) => {
-// 	return useQuery({
-// 		queryKey: ["roomMembers", roomId],
-// 		queryFn: async () => await getRoomMembers(roomId),
-// 		enabled: !!roomId,
-// 	});
-// };
-
-/*================= Get Recent Rooms =================*/
-export const useRecentRooms = (limit: number = 10) => {
-	return useQuery({
-		queryKey: ["recent-rooms", limit],
-		queryFn: async () => await getRecentRooms(limit),
-	});
-};
-
-/*================= Get Room Details =================*/
-
-// export const useGetRoomDetails = (roomId: string) => {
-// 	return useQuery({
-// 		queryKey: ["room-details", roomId],
-// 		queryFn: async () => await getRoomDetails(roomId),
-// 		enabled: !!roomId,
-// 	});
-// };
-
-//*================= Add User to Group =================*/
+//*================= Get non Group Users =================*/
 export const useGetNonGroupUsers = (roomId: string) => {
 	return useQuery({
 		queryKey: ["nonGroupUsers", roomId],
@@ -82,6 +54,7 @@ export const useGetNonGroupUsers = (roomId: string) => {
 	});
 };
 
+//*================= Add User to Group =================*/
 export const useAddUserToGroup = () => {
 	const queryClient = useQueryClient();
 
@@ -99,9 +72,9 @@ export const useAddUserToGroup = () => {
 			queryClient.invalidateQueries({
 				queryKey: ["nonGroupUsers", roomId],
 			});
-			// queryClient.invalidateQueries({
-			// 	queryKey: ["room-details", result.roomId],
-			// });
+			queryClient.invalidateQueries({
+				queryKey: ["recent-rooms"],
+			});
 			// router.refresh();
 			// toast.success(result.message || "User added to group successfully");
 		},
@@ -111,8 +84,15 @@ export const useAddUserToGroup = () => {
 					? error.message
 					: "Failed to add user to group. Please try again.",
 			);
-			console.error("Failed to add user to group:", error);
 		},
+	});
+};
+
+/*================= Get Recent Rooms =================*/
+export const useRecentRooms = (limit: number = 10) => {
+	return useQuery({
+		queryKey: ["recent-rooms", limit],
+		queryFn: async () => await getRecentRooms(limit),
 	});
 };
 
@@ -126,7 +106,7 @@ export const useGetAIRoom = () => {
 
 /*================= Update Group =================*/
 export const useUpdateGroupDetails = () => {
-	const queryClient = useQueryClient();
+	// const queryClient = useQueryClient();
 	return useMutation({
 		mutationKey: ["updateGroupDetails"],
 		mutationFn: async ({
@@ -136,12 +116,12 @@ export const useUpdateGroupDetails = () => {
 			roomId: string;
 			updates: {
 				name?: string;
-				bio?: string;
+				description?: string;
 			};
 		}) => await updateGroupDetails({ roomId, updates }),
-		// onSuccess: (_, { roomId }) => {
-		// 	// queryClient.invalidateQueries({ queryKey: ["room-details", roomId] });
-		// },
+		onSuccess: () => {
+			toast.success("Group details updated successfully!");
+		},
 		onError: (error) => {
 			toast.error(
 				error instanceof Error
@@ -151,25 +131,33 @@ export const useUpdateGroupDetails = () => {
 		},
 	});
 };
-
-/*================ Remove Memeber ===============*/
-export const useRemoveMemeber = () => {
+// Update Avatar
+export const useUpdataeGroupAvatar = () => {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationKey: ["remove-member"],
-		mutationFn: ({ roomId, userId }: { roomId: string; userId: string }) =>
-			removeMemeber({ roomId, userId }),
+		mutationKey: ["updateGroupAvatar"],
+		mutationFn: async ({
+			roomId,
+			avatarFile,
+			oldAvatarUrl,
+		}: {
+			roomId: string;
+			avatarFile: File;
+			oldAvatarUrl: string;
+		}) =>
+			await updateGroupAvatar({
+				roomId,
+				avatarFile,
+				oldAvatarUrl,
+			}),
 		onSuccess: (_, { roomId }) => {
-			queryClient.invalidateQueries({ queryKey: ["nonGroupUsers", roomId] });
-			// queryClient.invalidateQueries({ queryKey: ["room-details", roomId] });
-
-			toast.success("User removed from group successfully");
+			toast.success("Avatar updated successfully!");
 		},
 		onError: (error) => {
 			toast.error(
 				error instanceof Error
 					? error.message
-					: "Failed to remove user from group. Please try again.",
+					: "Failed to update group avatar. Please try again.",
 			);
 		},
 	});
@@ -208,21 +196,50 @@ export const useUpdateMemberRole = () => {
 	});
 };
 
+/*================ Remove Memeber ===============*/
+export const useRemoveMemeber = () => {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationKey: ["remove-member"],
+		mutationFn: ({ roomId, userId }: { roomId: string; userId: string }) =>
+			removeMemeber({ roomId, userId }),
+		onSuccess: (_, { roomId }) => {
+			queryClient.invalidateQueries({ queryKey: ["nonGroupUsers", roomId] });
+			// queryClient.invalidateQueries({ queryKey: ["room-details", roomId] });
+
+			toast.success("User removed from group successfully");
+		},
+		onError: (error) => {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to remove user from group. Please try again.",
+			);
+		},
+	});
+};
+
 // Leave Room
 export const useLeaveRoom = () => {
 	const queryClient = useQueryClient();
 	const router = useRouter();
 	return useMutation({
 		mutationKey: ["leave-room"],
-		mutationFn: async ({ roomId }: { roomId: string }) =>
-			await leaveRoom(roomId),
+		mutationFn: async ({
+			roomId,
+			newOwnerId,
+			chatType,
+		}: {
+			roomId: string;
+			newOwnerId?: string;
+			chatType: "group" | "direct";
+		}) => await leaveRoom({ roomId, newOwnerId, chatType }),
 		onSuccess: async (_, { roomId }) => {
-			console.log("Leaving room with ID:", roomId);
 			queryClient.invalidateQueries({ queryKey: ["recent-rooms"] });
 			queryClient.invalidateQueries({ queryKey: ["nonGroupUsers", roomId] });
-			await queryClient.refetchQueries({
-				queryKey: ["nonGroupUsers", roomId],
-			});
+			// await queryClient.refetchQueries({
+			// 	queryKey: ["nonGroupUsers", roomId],
+			// });
 
 			router.replace("/chat");
 
@@ -233,6 +250,34 @@ export const useLeaveRoom = () => {
 				error instanceof Error
 					? error.message
 					: "Failed to leave room. Please try again.",
+			);
+		},
+	});
+};
+
+// Delete Room
+export const useDeleteRoom = () => {
+	const queryClient = useQueryClient();
+	const router = useRouter();
+	return useMutation({
+		mutationKey: ["delete-room"],
+		mutationFn: async ({
+			roomId,
+			chatType,
+		}: {
+			roomId: string;
+			chatType: string;
+		}) => deleteRoom({ roomId, chatType }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["recent-rooms"] });
+			router.replace("/chat");
+			toast.success("Room deleted successfully");
+		},
+		onError: (error) => {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to delete room. Please try again.",
 			);
 		},
 	});

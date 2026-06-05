@@ -2,10 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Member } from "@/types/auth";
-import { MinimalMessage } from "@/types/messages";
+import { AttachmentResponse, MinimalMessage } from "@/types/messages";
 import { getCurrentUser } from "./userAction";
 import { RecentRoom } from "@/types/rooms";
-import { revalidatePath } from "next/cache";
 
 export const getMessages = async (
 	roomId: string,
@@ -191,20 +190,42 @@ export const getAIRoom = async (): Promise<RecentRoom | null> => {
 	return data;
 };
 
-/*================= Update Group Details =================*/
-export const updateGroupDetails = async ({
-	roomId,
-	updates,
-}: {
-	roomId: string;
-	updates: {
-		name?: string;
-		bio?: string;
-	};
-}) => {
+// Load media files for a specific room
+export const getRoomMediaFiles = async (
+	roomId: string,
+): Promise<AttachmentResponse[]> => {
+	const user = await getCurrentUser();
+	if (!user) return [];
+
 	const supabase = await createClient();
-	await supabase.from("rooms").update(updates).eq("id", roomId);
-	revalidatePath(`/chat`);
-	revalidatePath(`/chat/${roomId}`);
-	revalidatePath(`/chat/${roomId}/manage`);
+	const { data: member, error: memberError } = await supabase
+		.from("room_members")
+		.select("user_id")
+		.eq("room_id", roomId)
+		.eq("user_id", user.id)
+		.maybeSingle();
+	if (memberError) throw new Error(memberError.message);
+	if (!member) {
+		throw new Error("You are not a member of this room.");
+	}
+
+	const { data, error } = await supabase
+		.from("messages")
+		.select("attachments")
+		.eq("room_id", roomId)
+		.order("created_at", { ascending: false });
+
+	if (error) throw new Error(error.message);
+
+	if (!data) return [];
+
+	const attachments: AttachmentResponse[] = [];
+
+	data.forEach((message) => {
+		if (message.attachments) {
+			attachments.push(...message.attachments);
+		}
+	});
+
+	return attachments;
 };

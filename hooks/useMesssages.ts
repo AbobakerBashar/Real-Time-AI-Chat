@@ -1,6 +1,7 @@
-import { getMessages } from "@/actions/messagesActions";
+import { getMessages, getRoomMediaFiles } from "@/actions/messagesActions";
 import {
 	Attachment,
+	AttachmentResponse,
 	Message,
 	MessageInput,
 	MessageResponse,
@@ -90,6 +91,7 @@ export const useSendMessage = () => {
 						: room,
 				);
 			});
+			queryClient.invalidateQueries({ queryKey: ["room-files", roomId] });
 		},
 
 		onError: (error: Error) => {
@@ -135,7 +137,14 @@ export const useEditMessage = () => {
 			queryClient.setQueryData<MinimalMessage[]>(
 				["messages", roomId],
 				(old = []) => {
-					return old.map((m) => (m.id === message.id ? message : m));
+					const normalizedMessage: MinimalMessage = {
+						...message,
+						attachments:
+							(message.attachments as AttachmentResponse[] | null) ?? [],
+					};
+					return old.map((m) =>
+						m.id === normalizedMessage.id ? normalizedMessage : m,
+					);
 				},
 			);
 		},
@@ -190,10 +199,28 @@ export const useDeleteMessage = () => {
 	});
 };
 
-/*================= Get Recent Messages =================*/
-// export const useRecentMessages = (limit: number = 10) => {
-// 	return useQuery({
-// 		queryKey: ["recent-rooms"],
-// 		queryFn: async () => await getRecentRooms(limit),
-// 	});
-// };
+/*================= Get Room Files =================*/
+export const useGetRoomFiles = (roomId: string) => {
+	return useQuery({
+		queryKey: ["room-files", roomId],
+		queryFn: async () => await getRoomMediaFiles(roomId),
+		enabled: !!roomId,
+	});
+};
+
+// ================= Dowload file =================*/
+export const downloadFile = async (url: string, filename: string) => {
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error("Failed to download file");
+	}
+	const blob = await response.blob();
+	const objectUrl = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = objectUrl;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(objectUrl);
+};

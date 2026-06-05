@@ -254,7 +254,7 @@ const InputArea = ({ details }: { details: RoomDetails | null }) => {
 						multiple
 						onChange={handleFileSelect}
 						className="hidden"
-						accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.xls,.xlsx"
+						accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,video/*"
 						disabled={attachments.length >= MAX_ATTACHMENTS}
 					/>
 

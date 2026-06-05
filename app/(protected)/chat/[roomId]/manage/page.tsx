@@ -2,20 +2,32 @@ import { getRoomDetails } from "@/actions/room";
 import DangerZone from "@/components/chat/DangerZone";
 import GroupCustomizationSection from "@/components/chat/GroupCustomizationSection";
 import ManageRoomHeader from "@/components/chat/ManageRoomHeader";
-import MediaFilesSection from "@/components/chat/MediaFilesSection";
 import MembersListSection from "@/components/chat/MembersListSection";
 import MobileHeader from "@/components/chat/MobileHeader";
 import RoomInformation from "@/components/chat/RoomInformation";
 
+import { UUID_REGEX } from "@/utils/validate";
+import dynamic from "next/dynamic";
+import { notFound } from "next/navigation";
+
+const MediaFilesSection = dynamic(
+	() => import("@/components/chat/MediaFilesSection"),
+);
+
 const fetchRoomDetails = async (roomId: string) => {
+	if (!UUID_REGEX.test(roomId)) {
+		notFound();
+	}
+
 	try {
 		const details = await getRoomDetails(roomId);
+
 		return details;
 	} catch (error) {
 		if (error instanceof Error) {
-			throw new Error(`Failed to fetch room details: ${error.message}`);
+			throw new Error(error.message);
 		} else {
-			throw new Error("Failed to fetch room details");
+			throw new Error("Failed to fetch room details. Please try again later.");
 		}
 	}
 };
@@ -28,9 +40,13 @@ export default async function ManageRoomPage({
 	const { roomId } = await params;
 
 	const roomDetails = await fetchRoomDetails(roomId);
+	if (!roomDetails) {
+		notFound();
+	}
 
-	const isGroupChat = roomDetails?.type === "group";
-	const role = roomDetails?.current_user?.role;
+	const isGroupChat = roomDetails.type === "group";
+	const isAI = roomDetails.type === "ai";
+	const role = roomDetails.current_user?.role;
 
 	return (
 		<div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-100 dark:bg-linear-to-br dark:from-gray-950 dark:via-gray-900 dark:to-black transition-colors duration-300">
@@ -46,12 +62,16 @@ export default async function ManageRoomPage({
 				{/* Room Information */}
 				<RoomInformation
 					roomId={roomId}
-					roomDetails={roomDetails!}
+					roomDetails={roomDetails}
 					role={role}
 				/>
 
 				{/* Shared Media & Files */}
-				<MediaFilesSection isGroupChat={isGroupChat} />
+				<MediaFilesSection
+					isGroupChat={isGroupChat}
+					roomId={roomId}
+					members={roomDetails?.members || []}
+				/>
 
 				{/* Members List - Only for Groups */}
 				{isGroupChat && (
@@ -64,10 +84,23 @@ export default async function ManageRoomPage({
 					/>
 				)}
 				{/* Group Customization Section - Only for Groups */}
-				{isGroupChat && <GroupCustomizationSection role={role} />}
+				{isGroupChat && (role === "owner" || role === "admin") && (
+					<GroupCustomizationSection
+						avatar_url={roomDetails?.avatar_url || ""}
+						roomId={roomId}
+						description={roomDetails?.description || ""}
+					/>
+				)}
 
 				{/* Danger Zone */}
-				<DangerZone isOwner={role === "owner"} roomId={ roomId} />
+				<DangerZone
+					isOwner={role === "owner"}
+					roomId={roomId}
+					members={roomDetails?.members || []}
+					currentUserId={roomDetails?.current_user?.id}
+					isGroupChat={isGroupChat}
+					isAI={isAI}
+				/>
 			</div>
 		</div>
 	);

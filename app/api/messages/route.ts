@@ -4,16 +4,25 @@ import { NextResponse } from "next/server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+interface Attachment {
+	name: string;
+	url: string;
+	type: string;
+	size: number;
+	uploadedBy: string;
+	uploadedAt: Date;
+}
 
-type MessagePayload = {
+interface MessagePayload {
 	content: string;
 	room_id: string;
 	sender_id: string;
 	is_ai: boolean;
-	attachments?: string[];
-};
+	attachments?: Attachment[];
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
 export async function POST(request: Request) {
 	try {
@@ -62,7 +71,7 @@ export async function POST(request: Request) {
 		const supabase = await createClient();
 
 		// 2. Handle File Uploads to Supabase Storage
-		const attachmentUrls: string[] = [];
+		const attachmentUrls: Attachment[] = [];
 
 		if (files.length > 0) {
 			if (isAI) {
@@ -94,7 +103,14 @@ export async function POST(request: Request) {
 					.from("attachments")
 					.getPublicUrl(filePath);
 
-				attachmentUrls.push(publicUrlData.publicUrl);
+				attachmentUrls.push({
+					name: file.name,
+					url: publicUrlData.publicUrl,
+					type: file.type,
+					size: file.size,
+					uploadedBy: user.id,
+					uploadedAt: new Date(),
+				});
 			}
 		}
 

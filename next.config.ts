@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
 				protocol: "https",
 				hostname: "puxgzgbtjxevbzheuazc.supabase.co",
 			},
+			{
+				protocol: "https",
+				hostname: "via.placeholder.com",
+			},
 		],
 	},
 	reactCompiler: true,

@@ -35,6 +35,8 @@ export interface RecentRoom extends MinimalRoom {
 export interface RoomDetails {
 	id: string;
 	name: string;
+	avatar_url?: string;
+	description?: string;
 	type: "ai" | "person" | "group";
 	members?: Member[];
 	current_user?: {
