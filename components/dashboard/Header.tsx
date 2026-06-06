@@ -1,14 +1,33 @@
 "use client";
 
 import { useTheme } from "@/components/common/ThemeProvider";
-import { useCurrentUser } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
-import { MessageCirclePlus, Moon, Sun, Menu, X } from "lucide-react";
+import {
+	MessageCirclePlus,
+	Moon,
+	Sun,
+	Menu,
+	X,
+	LayoutDashboard,
+	User,
+	Settings,
+	Bell,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import LogoutButton from "@/components/common/LogoutButton";
+import {
+	Sheet,
+	SheetContent,
+	SheetFooter,
+	SheetHeader,
+} from "@/components/ui/sheet";
+import { UserProfile } from "@/types/auth";
+import Logo from "../common/Logo";
+import { usePathname } from "next/navigation";
+import GoToChat from "../common/GoToChat";
 
 const headerVariants = {
 	hidden: { opacity: 0, y: -20 },
@@ -19,10 +38,19 @@ const headerVariants = {
 	},
 };
 
-export default function DashboardHeader() {
+const isActive = (pathname: string, href: string) => {
+	return pathname === href;
+};
+
+export default function DashboardHeader({
+	profile,
+}: {
+	profile: UserProfile | null;
+}) {
 	const { toggleTheme, theme } = useTheme();
-	const { data: user } = useCurrentUser();
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+	const pathname = usePathname();
 
 	return (
 		<motion.header
@@ -69,15 +97,20 @@ export default function DashboardHeader() {
 							href="/dashboard/profile"
 							className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group"
 						>
-							<Avatar size="sm">
-								<AvatarImage src="" alt="Profile" />
+							<Avatar>
+								<AvatarImage
+									src={profile?.avatar_url || ""}
+									alt={profile?.username || profile?.full_name || "Profile"}
+								/>
 								<AvatarFallback className="text-xs font-semibold">
-									{user?.email?.charAt(0).toUpperCase() || "U"}
+									{profile?.email?.charAt(0).toUpperCase() || "U"}
 								</AvatarFallback>
 							</Avatar>
 							<div className="hidden lg:block text-left">
 								<p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-									{user?.email?.split("@")[0] || "Profile"}
+									{profile?.username ||
+										profile?.full_name?.split(" ")[0] ||
+										"Profile"}
 								</p>
 								<p className="text-xs text-gray-500 dark:text-gray-400">
 									Account
@@ -105,62 +138,75 @@ export default function DashboardHeader() {
 				</div>
 
 				{/* Mobile Navigation Menu */}
-				{isMobileMenuOpen && (
-					<motion.nav
-						initial={{ opacity: 0, y: -10 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: -10 }}
-						className="md:hidden border-t border-gray-200 dark:border-white/10 mt-3 pt-3 space-y-1"
-					>
-						<Link
-							href="/chat"
-							className="flex items-center gap-2 px-6 py-2 bg-linear-to-r from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 dark:hover:from-indigo-600 dark:hover:to-purple-600 transition shadow-lg shadow-indigo-500/20 dark:shadow-indigo-500/30 duration-300"
-							onClick={() => setIsMobileMenuOpen(false)}
+				<Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+					<SheetContent side="left" className="w-3/4 sm:w-1/2 md:hidden">
+						<SheetHeader>
+							<Link href="/" className="w-fit">
+								<Logo />
+							</Link>
+						</SheetHeader>
+
+						<motion.nav
+							initial={{ opacity: 0, y: -10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -10 }}
+							className="md:hidden border-t border-gray-200 dark:border-white/10 mt-3 pt-3 space-y-1 px-4"
 						>
-							Chat
-						</Link>
-						<Link
-							href="/dashboard"
-							className="block px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-							onClick={() => setIsMobileMenuOpen(false)}
-						>
-							Dashboard
-						</Link>
-						<Link
-							href="/dashboard/profile"
-							className="block px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-							onClick={() => setIsMobileMenuOpen(false)}
-						>
-							Profile
-						</Link>
-						<Link
-							href="/dashboard/account"
-							className="block px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-							onClick={() => setIsMobileMenuOpen(false)}
-						>
-							Account
-						</Link>
-						<Link
-							href="/dashboard/settings"
-							className="block px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-							onClick={() => setIsMobileMenuOpen(false)}
-						>
-							Settings
-						</Link>
-						<Link
-							href="/dashboard/notifications"
-							className="block px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-							onClick={() => setIsMobileMenuOpen(false)}
-						>
-							Notifications
-						</Link>
-						<div className="md:hidden pt-2 border-t border-gray-200 dark:border-white/10">
-							<div className="px-3">
-								<LogoutButton />
-							</div>
-						</div>
-					</motion.nav>
-				)}
+							<GoToChat className="mb-2" />
+							<Link
+								href="/dashboard"
+								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
+								onClick={() => setIsMobileMenuOpen(false)}
+							>
+								<LayoutDashboard className="w-5 h-5" />
+								Dashboard
+							</Link>
+							<Link
+								href="/dashboard/profile"
+								className={`px-3 py-2.5 rounded-lg  hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center gap-2 ${isActive(pathname, "/dashboard/profile") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
+								onClick={() => setIsMobileMenuOpen(false)}
+							>
+								<Avatar className="w-5 h-5 inline-block">
+									<AvatarImage
+										src={profile?.avatar_url || ""}
+										alt={profile?.username || profile?.full_name || "Profile"}
+									/>
+									<AvatarFallback className="text-xs font-semibold">
+										{profile?.email?.charAt(0).toUpperCase() || "U"}
+									</AvatarFallback>
+								</Avatar>
+								Profile
+							</Link>
+							<Link
+								href="/dashboard/account"
+								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard/account") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
+								onClick={() => setIsMobileMenuOpen(false)}
+							>
+								<User className="w-5 h-5" />
+								Account
+							</Link>
+							<Link
+								href="/dashboard/settings"
+								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard/settings") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
+								onClick={() => setIsMobileMenuOpen(false)}
+							>
+								<Settings className="w-5 h-5" />
+								Settings
+							</Link>
+							<Link
+								href="/dashboard/notifications"
+								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard/notifications") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
+								onClick={() => setIsMobileMenuOpen(false)}
+							>
+								<Bell className="w-5 h-5" />
+								Notifications
+							</Link>
+						</motion.nav>
+						<SheetFooter className="pt-2 border-t border-gray-200 dark:border-white/10">
+							<LogoutButton size="lg" className="w-full" />
+						</SheetFooter>
+					</SheetContent>
+				</Sheet>
 			</div>
 		</motion.header>
 	);

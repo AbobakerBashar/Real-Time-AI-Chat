@@ -1,7 +1,9 @@
 import { getCurrentUserProfile } from "@/actions/userAction";
+import DangerZone from "@/components/dashboard/DangerZone";
 import LogoutButton from "@/components/common/LogoutButton";
 import AccountInfo from "@/components/dashboard/AccountInfo";
 import EditForm from "@/components/dashboard/EditForm";
+import SecuritySection from "@/components/dashboard/SecuritySection";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Metadata } from "next";
@@ -99,6 +101,12 @@ export default async function ProfilePage() {
 					profileId={profile?.id || ""}
 					createdAt={profile?.created_at}
 				/>
+
+				{/* Security Section */}
+				<SecuritySection />
+
+				{/* Danger Zone */}
+				<DangerZone />
 			</div>
 		</div>
 	);

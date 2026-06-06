@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { User } from "@supabase/supabase-js";
 
 const containerVariants = {
 	hidden: { opacity: 0 },
@@ -56,12 +57,8 @@ const buttonVariants = {
 	},
 };
 
-export default function Hero() {
-	const stats = [
-		{ value: "10M+", label: "Active Users" },
-		{ value: "99.9%", label: "Uptime" },
-		{ value: "<100ms", label: "Avg Response" },
-	];
+export default function Hero({ user }: { user: User | null }) {
+	const isAuthenticated = !!user;
 
 	return (
 		<section className="relative h-[90vh] w-full overflow-hidden">
@@ -115,27 +112,27 @@ export default function Hero() {
 				></motion.div>
 			</motion.div>
 
-			{/* Content */}
-			<div className="relative z-10 h-full flex items-center justify-center px-6 sm:px-10 lg:px-20">
+			{/* Animated Badge */}
+			<motion.div variants={itemVariants}>
 				<motion.div
-					className="text-white space-y-5 text-center max-w-4xl mx-auto"
+					// className="inline-block"
+					className="inline-block absolute top-8 left-1/2 transform -translate-x-1/2 z-20"
+					animate={{ y: [0, -10, 0] }}
+					transition={{ duration: 3, repeat: Infinity }}
+				>
+					<Badge className="h-8 bg-blue-500/30 backdrop-blur-sm border border-blue-400/50 text-blue-100">
+						✨ Real-Time AI Chat App
+					</Badge>
+				</motion.div>
+			</motion.div>
+			{/* Content */}
+			<div className="relative -mt-3.5 z-10 h-full flex items-center justify-center px-6 sm:px-10 lg:px-20">
+				<motion.div
+					className="text-white space-y-3 text-center max-w-4xl mx-auto"
 					variants={containerVariants}
 					initial="hidden"
 					animate="visible"
 				>
-					{/* Animated Badge */}
-					<motion.div variants={itemVariants}>
-						<motion.div
-							className="inline-block"
-							animate={{ y: [0, -10, 0] }}
-							transition={{ duration: 3, repeat: Infinity }}
-						>
-							<Badge className="py-3 bg-blue-500/30 backdrop-blur-sm border border-blue-400/50 text-blue-100">
-								✨ Real-Time AI Chat App
-							</Badge>
-						</motion.div>
-					</motion.div>
-
 					{/* Animated Title */}
 					<motion.div variants={titleVariants}>
 						<h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight">
@@ -167,7 +164,7 @@ export default function Hero() {
 
 					{/* Animated CTA Buttons */}
 					<motion.div
-						className="flex flex-col sm:flex-row gap-4 pt-6 justify-center"
+						className="flex flex-col sm:flex-row gap-4 mt-4 justify-center"
 						variants={itemVariants}
 					>
 						<motion.div
@@ -176,59 +173,13 @@ export default function Hero() {
 							whileTap={{ scale: 0.95 }}
 						>
 							<Link
-								href="/chat"
-								className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all shadow-lg shadow-blue-500/50 gap-2"
+								href={isAuthenticated ? "/chat" : "/auth/signup"}
+								className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold bg-linear-to-r from-indigo-600 to-purple-600 text-white transition-all shadow-lg shadow-blue-500/50 gap-2"
 							>
 								Start Chatting Free
 								<ArrowRight className="w-4 h-4" />
 							</Link>
 						</motion.div>
-
-						<motion.button
-							className="px-8 py-3 rounded-lg font-semibold border border-white/30 hover:bg-white/10 text-white transition-all backdrop-blur-sm"
-							variants={buttonVariants}
-							whileHover="hover"
-							whileTap={{ scale: 0.95 }}
-						>
-							Watch Demo
-						</motion.button>
-					</motion.div>
-
-					{/* Animated Stats */}
-					<motion.div
-						className="grid grid-cols-3 gap-6 sm:gap-12 pt-12 mt-7 border-t border-white/10"
-						variants={itemVariants}
-					>
-						{stats.map((stat, index) => (
-							<motion.div
-								key={index}
-								initial={{ opacity: 0, y: 20 }}
-								animate={{ opacity: 1, y: 0 }}
-								transition={{
-									delay: 0.6 + index * 0.1,
-									duration: 0.8,
-								}}
-								whileHover={{ scale: 1.05 }}
-								className="space-y-2 cursor-pointer"
-							>
-								<motion.div
-									className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
-									animate={{
-										scale: [1, 1.1, 1],
-									}}
-									transition={{
-										duration: 2,
-										repeat: Infinity,
-										delay: index * 0.2,
-									}}
-								>
-									{stat.value}
-								</motion.div>
-								<div className="text-sm sm:text-base text-gray-300">
-									{stat.label}
-								</div>
-							</motion.div>
-						))}
 					</motion.div>
 				</motion.div>
 			</div>

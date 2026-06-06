@@ -21,7 +21,7 @@ const LogoutButton = ({
 			size={size}
 			className={className}
 		>
-			<LogOut className="mr-2" />
+			<LogOut className="mr-1" />
 			Logout
 		</Button>
 	);

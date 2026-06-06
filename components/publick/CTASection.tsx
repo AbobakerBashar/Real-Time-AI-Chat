@@ -1,6 +1,8 @@
 "use client";
 
+import { User } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const sectionTitleVariants = {
 	hidden: { opacity: 0, y: 30 },
@@ -53,7 +55,9 @@ const ctaButtonVariants = {
 	tap: { scale: 0.95 },
 };
 
-const CTASection = () => {
+const CTASection = ({ user }: { user: User | null }) => {
+	const isAuthenticated = !!user;
+
 	return (
 		<motion.section
 			initial="hidden"
@@ -82,17 +86,20 @@ const CTASection = () => {
 					Join millions of users who are already experiencing the power of
 					real-time AI conversations.
 				</motion.p>
-				<motion.button
-					className="px-10 py-4 bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 dark:hover:from-blue-600 dark:hover:to-purple-600 transition-all duration-300 shadow-lg shadow-blue-500/20 dark:shadow-blue-500/30 text-lg transform hover:scale-105"
-					variants={ctaButtonVariants}
-					initial="hidden"
-					whileInView="visible"
-					whileHover="hover"
-					whileTap="tap"
-					viewport={{ once: true, margin: "-100px" }}
-				>
-					Get Started Now
-				</motion.button>
+
+				<Link href={isAuthenticated ? "/chat" : "/auth/signup"}>
+					<motion.button
+						className="px-10 py-2 bg-linear-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 dark:hover:from-blue-600 dark:hover:to-purple-600 transition-all duration-300 shadow-lg shadow-blue-500/20 dark:shadow-blue-500/30 text-lg transform hover:scale-105"
+						variants={ctaButtonVariants}
+						initial="hidden"
+						whileInView="visible"
+						whileHover="hover"
+						whileTap="tap"
+						viewport={{ once: true, margin: "-100px" }}
+					>
+						Get Started Now
+					</motion.button>
+				</Link>
 			</div>
 		</motion.section>
 	);

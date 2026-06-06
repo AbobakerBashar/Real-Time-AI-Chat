@@ -196,3 +196,29 @@ export const getNonGroupUsers = async (
 
 	return (users as MinimalProfile[]) || [];
 };
+
+// Delete User Account
+export const deleteUserAccount = async (): Promise<void> => {
+	const supabase = await createClient();
+	const user = await getCurrentUser();
+	if (!user) throw new Error("User not authenticated");
+	const { error } = await supabase.auth.admin.deleteUser(user.id);
+	if (error) throw new Error(error.message);
+	revalidatePath("/");
+};
+
+// Change Password
+export const changeUserPassword = async (
+	currentPassword: string,
+	newPassword: string,
+): Promise<void> => {
+	const supabase = await createClient();
+	const user = await getCurrentUser();
+	if (!user) throw new Error("User not authenticated");
+
+	const { error } = await supabase.auth.updateUser({
+		password: newPassword,
+	});
+	if (error) throw new Error(error.message);
+	revalidatePath("/dashboard/profile");
+};
