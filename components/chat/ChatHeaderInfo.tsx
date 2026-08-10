@@ -1,11 +1,11 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AddMememberBtn from "@/components/chat/AddMemberBtn";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { MinimalProfile } from "@/types/auth";
+import { Member } from "@/types/auth";
+import { RoomDetails } from "@/types/rooms";
 import { motion } from "framer-motion";
 import { Plus, Users2 } from "lucide-react";
 import Link from "next/link";
-import { RoomDetails } from "@/types/rooms";
 
 const ChatHeaderInfo = ({ details }: { details: RoomDetails | null }) => {
 	const { data: currentUser, isLoading } = useCurrentUser();
@@ -14,12 +14,12 @@ const ChatHeaderInfo = ({ details }: { details: RoomDetails | null }) => {
 	const groupName = type === "group" ? details?.name : "Group";
 	const roomId = details?.id;
 
-	const otherUser: MinimalProfile | undefined =
+	const otherUser: Member | undefined =
 		type === "person" && !isLoading
 			? details?.members?.find((m) => m.id !== currentUser?.id)
 			: undefined;
 
-	const isOnline = true;
+	const isOnline = otherUser?.is_active || false;
 
 	return (
 		<div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
@@ -61,19 +61,21 @@ const ChatHeaderInfo = ({ details }: { details: RoomDetails | null }) => {
 									? otherUser?.username || otherUser?.full_name
 									: groupName}
 							</h1>
-							{type === "group" && (details?.current_user?.role==="owner"||details?.current_user?.role==="admin") && (
-								<AddMememberBtn
-									roomId={roomId || ""}
-									variant="outline"
-									size="xs"
-									className="shrink-0 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-colors"
-								>
-									<Plus className="w-4 h-4" />
-									<span className="hidden sm:inline text-xs font-medium ml-1">
-										Add
-									</span>
-								</AddMememberBtn>
-							)}
+							{type === "group" &&
+								(details?.current_user?.role === "owner" ||
+									details?.current_user?.role === "admin") && (
+									<AddMememberBtn
+										roomId={roomId || ""}
+										variant="outline"
+										size="xs"
+										className="shrink-0 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-colors"
+									>
+										<Plus className="w-4 h-4" />
+										<span className="hidden sm:inline text-xs font-medium ml-1">
+											Add
+										</span>
+									</AddMememberBtn>
+								)}
 						</div>
 						{type === "person" && (
 							<p

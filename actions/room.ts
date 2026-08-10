@@ -5,6 +5,7 @@ import { getCurrentUser } from "./userAction";
 import { revalidatePath } from "next/cache";
 import { Member } from "@/types/auth";
 import { RoomDetails } from "@/types/rooms";
+import { User } from "@supabase/supabase-js";
 
 /*================= Get Room Details =================*/
 export const getRoomDetails = async (
@@ -28,7 +29,7 @@ export const getRoomDetails = async (
 			.from("room_members")
 			.select(
 				`joined_at, role,
-				profiles(id, username, full_name, avatar_url)`,
+				profiles(id, username, full_name, avatar_url, is_active)`,
 			)
 			.eq("room_id", roomId);
 		if (membersError) throw new Error(membersError.message);
@@ -47,6 +48,7 @@ export const getRoomDetails = async (
 					full_name: profile.full_name,
 					avatar_url: profile.avatar_url,
 					joined_at: member.joined_at,
+					is_active: profile.is_active,
 					role: member.role,
 				};
 			})
@@ -112,7 +114,7 @@ export async function addUsersToGroup(usersIds: string[], roomId: string) {
 		throw new Error("You must provide at least one user");
 
 	const supabase = await createClient();
-	const currentUser = await getCurrentUser();
+	const currentUser = (await getCurrentUser()) as User;
 
 	if (!currentUser) throw new Error("Unauthorized");
 
@@ -470,4 +472,23 @@ export const deleteRoom = async ({
 			revalidatePath(`/chat/${roomId}/manage`);
 		}
 	}
+};
+
+// Mark Room as Read
+export const markRoomAsRead = async (roomId: string, lastMessageId: string) => {
+	if (!roomId) return;
+	const user = await getCurrentUser();
+	if (!user) throw new Error("User not authenticated");
+	const supabase = await createClient();
+	const { error } = await supabase
+		.from("room_members")
+		.update({
+			last_read_message_id: lastMessageId,
+			last_read_at: new Date().toISOString(),
+		})
+		.eq("room_id", roomId)
+		.eq("user_id", user.id);
+	console.log("Marking room as read ERR:", error);
+	if (error) throw new Error(error.message);
+	revalidatePath(`/chat/${roomId}`);
 };

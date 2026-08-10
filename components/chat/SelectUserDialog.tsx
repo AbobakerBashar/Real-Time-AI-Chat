@@ -83,7 +83,7 @@ export default function SelectUserDialog({
 		: [];
 
 	// Handle create new chat room
-	const handleCreateRoom = async (userId?: string) => {
+	const handleCreateRoom = async (userId?: string, username?: string) => {
 		if (isCreatingRoom) return;
 		if (type === "group") {
 			const isValid =
@@ -106,12 +106,12 @@ export default function SelectUserDialog({
 				toast.error("Please select a user to chat with.");
 				return;
 			} else {
-				const name = "Direct";
 				const newRoomId = await createRoom({
-					name,
+					name: "Direct",
 					chat_type: "person",
 					is_ai: false,
 					other_user_id: userId,
+					username,
 				});
 				router.push(`/chat/${newRoomId.roomId}`);
 			}
@@ -265,7 +265,7 @@ function UsersList({
 	handleCreateRoom,
 }: {
 	users: MinimalProfile[];
-	handleCreateRoom: (userId: string) => void;
+	handleCreateRoom: (userId: string, username: string) => void;
 }) {
 	return (
 		<div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -277,7 +277,12 @@ function UsersList({
 						whileTap={{ scale: 0.98 }}
 					>
 						<button
-							onClick={() => handleCreateRoom(user.id)}
+							onClick={() =>
+								handleCreateRoom(
+									user.id,
+									user.username || user.full_name || "Unknown",
+								)
+							}
 							className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5
 									}`}
 						>

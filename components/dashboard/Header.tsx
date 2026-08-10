@@ -1,23 +1,9 @@
 "use client";
 
-import { useTheme } from "@/components/common/ThemeProvider";
-import { motion } from "framer-motion";
-import {
-	MessageCirclePlus,
-	Moon,
-	Sun,
-	Menu,
-	X,
-	LayoutDashboard,
-	User,
-	Settings,
-	Bell,
-} from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import LogoutButton from "@/components/common/LogoutButton";
+import { useTheme } from "@/components/common/ThemeProvider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
 	Sheet,
 	SheetContent,
@@ -25,9 +11,13 @@ import {
 	SheetHeader,
 } from "@/components/ui/sheet";
 import { UserProfile } from "@/types/auth";
-import Logo from "../common/Logo";
+import { motion } from "framer-motion";
+import { LayoutDashboard, Menu, Moon, Settings, Sun, X } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import GoToChat from "../common/GoToChat";
+import Logo from "../common/Logo";
 
 const headerVariants = {
 	hidden: { opacity: 0, y: -20 },
@@ -63,15 +53,7 @@ export default function DashboardHeader({
 				<div className="flex items-center justify-between gap-4">
 					{/* Logo and Brand */}
 					<Link href="/" className="flex items-center gap-2.5 group shrink-0">
-						<motion.div
-							whileHover={{ scale: 1.05 }}
-							className="w-10 h-10 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-indigo-500/30 transition-shadow"
-						>
-							<MessageCirclePlus className="w-5 h-5 text-white" />
-						</motion.div>
-						<span className="hidden sm:inline font-bold text-lg text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-							ChatHub
-						</span>
+						<Logo />
 					</Link>
 
 					{/* Right Section */}
@@ -177,14 +159,7 @@ export default function DashboardHeader({
 								</Avatar>
 								Profile
 							</Link>
-							<Link
-								href="/dashboard/account"
-								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard/account") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
-								onClick={() => setIsMobileMenuOpen(false)}
-							>
-								<User className="w-5 h-5" />
-								Account
-							</Link>
+
 							<Link
 								href="/dashboard/settings"
 								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard/settings") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
@@ -192,14 +167,6 @@ export default function DashboardHeader({
 							>
 								<Settings className="w-5 h-5" />
 								Settings
-							</Link>
-							<Link
-								href="/dashboard/notifications"
-								className={`flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${isActive(pathname, "/dashboard/notifications") ? "text-primary" : "text-gray-700 dark:text-gray-300"}`}
-								onClick={() => setIsMobileMenuOpen(false)}
-							>
-								<Bell className="w-5 h-5" />
-								Notifications
 							</Link>
 						</motion.nav>
 						<SheetFooter className="pt-2 border-t border-gray-200 dark:border-white/10">

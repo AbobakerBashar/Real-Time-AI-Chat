@@ -1,3 +1,4 @@
+import { getCurrentUserProfile } from "@/actions/userAction";
 import SettingsComponent from "@/components/dashboard/SettingsComponent";
 
 export const metadata = {
@@ -7,6 +8,19 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function SettingsPage() {
-	return <SettingsComponent />;
+const fetchProfile = async () => {
+	try {
+		const profile = await getCurrentUserProfile();
+		return profile;
+	} catch (error) {
+		throw new Error(
+			error instanceof Error ? error.message : "Failed to fetch profile",
+		);
+	}
+};
+
+export default async function SettingsPage() {
+	const profile = await fetchProfile();
+
+	return <SettingsComponent profile={profile} />;
 }

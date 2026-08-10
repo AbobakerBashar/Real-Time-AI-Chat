@@ -1,6 +1,7 @@
 import { getRecentRooms } from "@/actions/messagesActions";
 import { getCurrentUserProfile } from "@/actions/userAction";
 import DashboardrPageComponent from "@/components/dashboard/DashboardrPageComponent";
+import { Suspense } from "react";
 
 export const metadata = {
 	title: "Dashboard - ChatHub",
@@ -26,5 +27,9 @@ const fetchUserData = async () => {
 export default async function DashboardrPage() {
 	const { user, recentRooms } = await fetchUserData();
 
-	return <DashboardrPageComponent user={user} recentRooms={recentRooms} />;
+	return (
+		<Suspense>
+			<DashboardrPageComponent user={user} recentRooms={recentRooms} />
+		</Suspense>
+	);
 }

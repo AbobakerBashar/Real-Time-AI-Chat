@@ -81,31 +81,88 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          message: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          deleted_at: string | null
+          enable_notifications: boolean
+          enable_sound_effects: boolean
           full_name: string | null
           id: string
           is_active: boolean
+          last_seen: string | null
+          show_last_seen: boolean
+          show_online_status: boolean
           updated_at: string | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          deleted_at?: string | null
+          enable_notifications?: boolean
+          enable_sound_effects?: boolean
           full_name?: string | null
           id: string
           is_active?: boolean
+          last_seen?: string | null
+          show_last_seen?: boolean
+          show_online_status?: boolean
           updated_at?: string | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          deleted_at?: string | null
+          enable_notifications?: boolean
+          enable_sound_effects?: boolean
           full_name?: string | null
           id?: string
           is_active?: boolean
+          last_seen?: string | null
+          show_last_seen?: boolean
+          show_online_status?: boolean
           updated_at?: string | null
           username?: string | null
         }
@@ -115,6 +172,8 @@ export type Database = {
         Row: {
           id: string
           joined_at: string | null
+          last_read_at: string | null
+          last_read_message_id: string | null
           role: string
           room_id: string | null
           user_id: string | null
@@ -122,6 +181,8 @@ export type Database = {
         Insert: {
           id?: string
           joined_at?: string | null
+          last_read_at?: string | null
+          last_read_message_id?: string | null
           role?: string
           room_id?: string | null
           user_id?: string | null
@@ -129,11 +190,20 @@ export type Database = {
         Update: {
           id?: string
           joined_at?: string | null
+          last_read_at?: string | null
+          last_read_message_id?: string | null
           role?: string
           room_id?: string | null
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "room_members_last_read_message_id_fkey"
+            columns: ["last_read_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "room_members_room_id_fkey"
             columns: ["room_id"]

@@ -1,4 +1,6 @@
 import {
+	changeUserPassword,
+	deleteAccount,
 	getCurrentUser,
 	getCurrentUserProfile,
 	getUserList,
@@ -42,6 +44,7 @@ export const useSignup = () => {
 			queryClient.invalidateQueries({ queryKey: ["user"] });
 			queryClient.invalidateQueries({ queryKey: ["userList"] });
 			queryClient.invalidateQueries({ queryKey: ["usersWithoutRoom"] });
+			queryClient.invalidateQueries({ queryKey: ["onlineUsers"] });
 		},
 		onError: (error) => {
 			toast.error(error.message || "Signup failed. Please try again.");
@@ -71,6 +74,7 @@ export const useSignIn = () => {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["user"] });
 			queryClient.invalidateQueries({ queryKey: ["userList"] });
+			queryClient.invalidateQueries({ queryKey: ["onlineUsers"] });
 			toast.success("Successfully signed in! Welcome back.");
 		},
 		onError: (error) => {
@@ -94,6 +98,7 @@ export const useSignOut = () => {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["user"] });
 			queryClient.invalidateQueries({ queryKey: ["userList"] });
+			queryClient.invalidateQueries({ queryKey: ["onlineUsers"] });
 			toast.success("Successfully signed out. See you next time!");
 			router.refresh();
 		},
@@ -109,6 +114,35 @@ export const useCurrentUser = () => {
 	return useQuery({
 		queryKey: ["user"],
 		queryFn: getCurrentUser,
+	});
+};
+
+/*================== Change Password Hook ==================*/
+export const useChangePassword = () => {
+	return useMutation({
+		mutationFn: async (data: {
+			currentPassword: string;
+			newPassword: string;
+		}) => await changeUserPassword(data.currentPassword, data.newPassword),
+		onSuccess: () => toast.success("Password changed successfully!"),
+	});
+};
+
+/*================== Delete Account Hook ==================*/
+export const useDeleteAccount = () => {
+	const queryClient = useQueryClient();
+	const router = useRouter();
+
+	return useMutation({
+		mutationFn: async () => await deleteAccount(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["user"] });
+			queryClient.invalidateQueries({ queryKey: ["userList"] });
+			toast.success("Account deleted successfully!");
+			queryClient.invalidateQueries({ queryKey: ["usersWithoutRoom"] });
+			queryClient.invalidateQueries({ queryKey: ["onlineUsers"] });
+			router.replace("/");
+		},
 	});
 };
 
@@ -143,18 +177,10 @@ export const useUpdateUserProfile = () => {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: async (profileData: UpdateProfileInput) => {
-			const data = await updateUserProfile(profileData);
-			console.log("Profile update response:", data);
-			return data;
+			await updateUserProfile(profileData);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-			toast.success("Profile updated successfully!");
-		},
-		onError: (error) => {
-			toast.error(
-				error.message || "Failed to update profile. Please try again.",
-			);
 		},
 	});
 };
@@ -174,6 +200,46 @@ export const useUpdateUserAvatar = () => {
 			toast.error(
 				error.message || "Failed to update avatar. Please try again.",
 			);
+		},
+	});
+};
+
+/*================== Get Online Users Hooks ==================*/
+export const useOnlineUsers = () => {
+	return useQuery({
+		queryKey: ["onlineUsers"],
+		queryFn: async () => {
+			const user = await getCurrentUserProfile();
+
+			if (!user) {
+				throw new Error("User not authenticated");
+			}
+
+			const supabase = createClient();
+
+			const channel = supabase.channel("online-users", {
+				config: {
+					presence: {
+						key: user.id,
+					},
+				},
+			});
+
+			channel
+				.on("presence", { event: "sync" }, () => {
+					const state = channel.presenceState();
+					console.log(state);
+				})
+				.subscribe(async (status) => {
+					if (status === "SUBSCRIBED") {
+						await channel.track({
+							userId: user.id,
+							username: user.username,
+							onlineAt: new Date().toISOString(),
+						});
+					}
+				});
+			return channel;
 		},
 	});
 };

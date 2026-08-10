@@ -1,4 +1,9 @@
-import { getAIRoom, getRecentRooms } from "@/actions/messagesActions";
+import {
+	getAIRoom,
+	getRecentRooms,
+	getUnreadCounts,
+} from "@/actions/messagesActions";
+import { addNotification } from "@/actions/notifications";
 import {
 	addUsersToGroup,
 	deleteRoom,
@@ -28,6 +33,22 @@ export const useCreateRoom = () => {
 
 			if (!res.ok) {
 				throw new Error(result.error || "Failed to create room");
+			}
+
+			if (
+				result.success &&
+				result.roomId &&
+				data.chat_type === "person" &&
+				data.other_user_id
+			) {
+				await addNotification({
+					message: `You have a new chat from ${data.username}`,
+					type: "new_chat",
+					title: "New Chat",
+					entity_id: result.roomId,
+					entity_type: "room",
+					user_id: data.other_user_id,
+				});
 			}
 
 			return result;
@@ -66,7 +87,20 @@ export const useAddUserToGroup = () => {
 		}: {
 			roomId: string;
 			usersIds: string[];
-		}) => addUsersToGroup(usersIds, roomId),
+		}) => {
+			await addUsersToGroup(usersIds, roomId);
+
+			for (const userId of usersIds) {
+				await addNotification({
+					message: `You have been added to a group chat`,
+					type: "new_chat",
+					title: "New Chat",
+					entity_id: roomId,
+					entity_type: "room",
+					user_id: userId,
+				});
+			}
+		},
 		onSuccess: (_, { roomId }) => {
 			console.log("Adding ", roomId);
 			queryClient.invalidateQueries({
@@ -282,3 +316,13 @@ export const useDeleteRoom = () => {
 		},
 	});
 };
+
+// Get unread counts for a room
+export const useUnreadCounts = () => {
+	return useQuery({
+		queryKey: ["unread-counts"],
+		queryFn: getUnreadCounts,
+	});
+};
+
+// Mark room as read

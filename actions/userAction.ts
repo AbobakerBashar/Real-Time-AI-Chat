@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import {
 	MinimalProfile,
 	Profile,
@@ -31,7 +31,9 @@ export const getCurrentUserProfile = async (): Promise<UserProfile | null> => {
 
 	const { data, error } = await supabase
 		.from("profiles")
-		.select("id, username, full_name, avatar_url, is_active, created_at")
+		.select(
+			"id, username, full_name, avatar_url, is_active, created_at, show_last_seen, last_seen, show_online_status, enable_notifications, enable_sound_effects",
+		)
 		.eq("id", user.id)
 		.single();
 
@@ -72,7 +74,7 @@ export const updateUserProfile = async (
 		.eq("id", user.id);
 
 	if (error) {
-		throw error;
+		throw new Error(error.message);
 	}
 
 	revalidatePath("/dashboard/profile");
@@ -197,16 +199,6 @@ export const getNonGroupUsers = async (
 	return (users as MinimalProfile[]) || [];
 };
 
-// Delete User Account
-export const deleteUserAccount = async (): Promise<void> => {
-	const supabase = await createClient();
-	const user = await getCurrentUser();
-	if (!user) throw new Error("User not authenticated");
-	const { error } = await supabase.auth.admin.deleteUser(user.id);
-	if (error) throw new Error(error.message);
-	revalidatePath("/");
-};
-
 // Change Password
 export const changeUserPassword = async (
 	currentPassword: string,
@@ -215,10 +207,91 @@ export const changeUserPassword = async (
 	const supabase = await createClient();
 	const user = await getCurrentUser();
 	if (!user) throw new Error("User not authenticated");
+	const { error: currentPasswordError } =
+		await supabase.auth.signInWithPassword({
+			email: user.email!,
+			password: currentPassword,
+		});
 
-	const { error } = await supabase.auth.updateUser({
+	if (currentPasswordError) {
+		throw new Error(
+			currentPasswordError.message || "Current password is incorrect",
+		);
+	}
+
+	await supabase.auth.updateUser({
 		password: newPassword,
 	});
-	if (error) throw new Error(error.message);
-	revalidatePath("/dashboard/profile");
+};
+
+// Delete account
+export const deleteAccount = async (): Promise<void> => {
+	const user = await getCurrentUser();
+	if (!user) throw new Error("User not authenticated");
+
+	const admin = createAdminClient();
+
+	// 1. Anonymize profile
+	const { error: profileError } = await admin
+		.from("profiles")
+		.update({
+			username: "Deleted User",
+			full_name: "Deleted User",
+			avatar_url: null,
+			deleted_at: new Date().toISOString(),
+		})
+		.eq("id", user.id);
+
+	if (profileError)
+		throw new Error(profileError.message || "Failed to anonymize profile");
+
+	// 2. Remove from all rooms/groups
+	const { error: memberError } = await admin
+		.from("room_members")
+		.delete()
+		.eq("user_id", user.id);
+
+	if (memberError)
+		throw new Error(memberError.message || "Failed to remove user from rooms");
+
+	// 3. Handle rooms owned by the user
+
+	// transfer ownership of groups
+	const { data: ownedGroups } = await admin
+		.from("rooms")
+		.select("id")
+		.eq("created_by", user.id)
+		.eq("chat_type", "group");
+
+	if (ownedGroups) {
+		for (const group of ownedGroups) {
+			const { data: newOwner } = await admin
+				.from("room_members")
+				.select("user_id")
+				.eq("room_id", group.id)
+				.neq("user_id", user.id)
+				.limit(1)
+				.maybeSingle();
+
+			if (newOwner) {
+				await admin
+					.from("rooms")
+					.update({ created_by: newOwner.user_id })
+					.eq("id", group.id);
+
+				await admin
+					.from("room_members")
+					.update({ role: "owner" })
+					.eq("room_id", group.id)
+					.eq("user_id", newOwner.user_id);
+			}
+		}
+		revalidatePath("/");
+	}
+
+	// 4. Delete auth account
+	const { error: authError } = await admin.auth.admin.deleteUser(user.id);
+
+	if (authError)
+		throw new Error(authError.message || "Failed to delete account");
 };

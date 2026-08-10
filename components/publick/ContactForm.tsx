@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle, Send } from "lucide-react";
+import { CheckCircle, Send, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 const formVariants = {
@@ -25,6 +25,7 @@ const ContactForm = () => {
 	});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [submitted, setSubmitted] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -39,10 +40,25 @@ const ContactForm = () => {
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setIsSubmitting(true);
+		setError(null);
 
-		// Simulate API call
-		setTimeout(() => {
-			setIsSubmitting(false);
+		try {
+			const response = await fetch("/api/contact", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(formData),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(
+					data.error || "Failed to send message. Please try again.",
+				);
+			}
+
 			setSubmitted(true);
 			setFormData({ name: "", email: "", subject: "", message: "" });
 
@@ -50,7 +66,14 @@ const ContactForm = () => {
 			setTimeout(() => {
 				setSubmitted(false);
 			}, 5000);
-		}, 1500);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "An error occurred";
+			setError(errorMessage);
+			console.error("Contact form error:", err);
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	return (
@@ -77,6 +100,21 @@ const ContactForm = () => {
 				</motion.div>
 			) : (
 				<form onSubmit={handleSubmit} className="space-y-6">
+					{/* Error Alert */}
+					{error && (
+						<motion.div
+							initial={{ opacity: 0, y: -10 }}
+							animate={{ opacity: 1, y: 0 }}
+							className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+						>
+							<AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+							<div className="flex-1">
+								<p className="text-sm font-medium text-red-800 dark:text-red-200">
+									{error}
+								</p>
+							</div>
+						</motion.div>
+					)}
 					{/* Name Field */}
 					<div>
 						<label

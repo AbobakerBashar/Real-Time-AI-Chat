@@ -1,16 +1,15 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { LayoutDashboard, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { LayoutDashboard, User, Settings, Bell } from "lucide-react";
 import GoToChat from "../common/GoToChat";
 
 const sidebarItems = [
 	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/dashboard/profile", label: "Profile", icon: User },
 	{ href: "/dashboard/settings", label: "Settings", icon: Settings },
-	{ href: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];
 
 export default function DashboardSidebar() {

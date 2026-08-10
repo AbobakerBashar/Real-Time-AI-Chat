@@ -3,6 +3,8 @@ import ValuesSection from "@/components/publick/ValuesSection";
 import TeamSection from "@/components/publick/TeamSection";
 import AboutCTASection from "@/components/publick/AboutCTASection";
 import StatsSection from "@/components/publick/StatsSection";
+import { getCurrentUser } from "@/actions/userAction";
+import AboutHero from "@/components/publick/AboutHero";
 
 export const metadata = {
 	title: "About - AI Chat",
@@ -10,11 +12,23 @@ export const metadata = {
 		"Learn about our AI Chat platform and our mission to revolutionize communication.",
 };
 
-export default function AboutPage() {
+const fetchCurrentUser = async () => {
+	try {
+		const user = await getCurrentUser();
+		return user;
+	} catch (error) {
+		console.error("Error fetching current user:", error);
+		return null;
+	}
+};
+
+export default async function AboutPage() {
+	const user = await fetchCurrentUser();
+
 	return (
 		<div className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
 			{/* Hero Section */}
-			<AboutCTASection />
+			<AboutHero />
 			{/* Stats Section */}
 			<StatsSection />
 			{/* Story Section */}
@@ -24,7 +38,7 @@ export default function AboutPage() {
 			{/* Team Section */}
 			<TeamSection />
 			{/* CTA Section */}
-			<AboutCTASection />
+			<AboutCTASection user={user} />
 		</div>
 	);
 }

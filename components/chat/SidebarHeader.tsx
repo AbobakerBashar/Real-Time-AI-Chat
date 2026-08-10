@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { MessageCirclePlus, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import Logo from "../common/Logo";
 
 const SidebarHeader = () => {
 	const searchParams = useSearchParams();
@@ -14,15 +15,7 @@ const SidebarHeader = () => {
 	return (
 		<div className="p-4 border-b border-gray-200 dark:border-white/5">
 			<Link href="/" className="flex items-center gap-2 mb-4 group">
-				<motion.div
-					whileHover={{ scale: 1.1 }}
-					className="w-10 h-10 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-indigo-500/50 transition-shadow"
-				>
-					<MessageCirclePlus className="w-5 h-5 text-white" />
-				</motion.div>
-				<span className="text-gray-900 dark:text-white font-bold text-lg group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-					ChatHub
-				</span>
+				<Logo />
 			</Link>
 
 			<div className="grid grid-cols-2 gap-2">

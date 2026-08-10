@@ -7,8 +7,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Loader, Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { MessageItem } from "./message/MessageItem";
+import { markRoomAsRead } from "@/actions/room";
+import { useQueryClient } from "@tanstack/react-query";
 
 const MessagesContainer = ({ details }: { details: RoomDetails | null }) => {
+	const queryClient = useQueryClient();
+
 	const roomId = details?.id || "";
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const { data: messages, isLoading } = useGetMessages(roomId);
@@ -24,6 +28,37 @@ const MessagesContainer = ({ details }: { details: RoomDetails | null }) => {
 	useEffect(() => {
 		scrollToBottom();
 	}, [messages]);
+
+	const lastMarkedRef = useRef<string | null>(null);
+
+	// Mark messages as read when the user views them
+	useEffect(() => {
+		if (!messages?.length || !currentUser) return;
+
+		const lastMessage = messages[messages.length - 1];
+
+		if (lastMessage.sender_id === currentUser.id) return;
+
+		if (lastMarkedRef.current === lastMessage.id) return;
+
+		if (document.visibilityState === "visible") {
+			lastMarkedRef.current = lastMessage.id;
+
+			markRoomAsRead(roomId, lastMessage.id)
+				.then(() =>
+					queryClient.setQueryData(
+						["unread-counts", roomId],
+						(old: Record<string, number> = {}) => ({
+							...old,
+							[roomId]: 0,
+						}),
+					),
+				)
+				.catch((error) => {
+					console.error("Failed to mark room as read:", error);
+				});
+		}
+	}, [roomId, messages, currentUser, queryClient]);
 
 	const isSentMessage = (senderId: string | null) => {
 		return senderId === currentUser?.id;

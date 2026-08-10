@@ -9,9 +9,7 @@ export const useSidebarRealtime = () => {
 
 	useEffect(() => {
 		const supabase = createClient();
-		const currentUser = queryClient.getQueryData<{ id: string }>(["user"]);
 
-		// Listen to ALL inserts in the messages table
 		const channel = supabase
 			.channel("sidebar-global-updates")
 			.on(
@@ -27,29 +25,17 @@ export const useSidebarRealtime = () => {
 					queryClient.setQueryData<RecentRoom[]>(["recent-rooms"], (old) => {
 						if (!old) return [];
 
-						// 1. Check if the room for this message exists in our sidebar list
 						const roomIndex = old.findIndex((r) => r.id === newMessage.room_id);
 
 						if (roomIndex === -1) {
-							// If the room isn't in our sidebar list, just refetch the whole list from the server
 							queryClient.invalidateQueries({ queryKey: ["recent-rooms"] });
 							return old;
 						}
 
-						// 2. Create the updated room object
-						const updatedRoom: RecentRoom = {
-							...old[roomIndex],
-							last_message: newMessage.content,
-							last_message_at: newMessage.created_at,
-							sent_by_current_user: newMessage.sender_id === currentUser?.id,
-						};
-
-						// 3. Remove the room from its current position and move it to the TOP [index 0]
-						const remainingRooms = old.filter(
-							(r) => r.id !== newMessage.room_id,
-						);
-
-						return [updatedRoom, ...remainingRooms];
+						// unread_count depends on room_members.last_read_* and messages.created_at,
+						// so the safest approach is to refetch the sidebar list.
+						queryClient.invalidateQueries({ queryKey: ["recent-rooms"] });
+						return old;
 					});
 				},
 			)

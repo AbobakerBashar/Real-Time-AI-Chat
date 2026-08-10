@@ -16,7 +16,7 @@ export const getMessages = async (
 		.eq("room_id", roomId)
 		.order("created_at", { ascending: true });
 
-	if (error) throw error;
+	if (error) throw new Error(error.message);
 
 	return data;
 };
@@ -69,6 +69,7 @@ export const getRecentRooms = async (
 		.select(
 			`
       room_id,
+      last_read_at,
       rooms (
         id,
         name,
@@ -82,13 +83,13 @@ export const getRecentRooms = async (
 		)
 		.eq("user_id", user.id);
 
-	if (error) {
+	if (error || !memberships) {
 		console.error(error);
 		return [];
 	}
 
 	const rooms = await Promise.all(
-		(memberships ?? []).map(async (membership): Promise<RecentRoom | null> => {
+		memberships.map(async (membership): Promise<RecentRoom | null> => {
 			const room = Array.isArray(membership.rooms)
 				? membership.rooms[0]
 				: membership.rooms;
@@ -102,14 +103,14 @@ export const getRecentRooms = async (
 					.from("room_members")
 					.select(
 						`
-            profiles (
-              id,
-              username,
-              full_name,
-              avatar_url,
-              is_active
-            )
-          `,
+              profiles (
+                id,
+                username,
+                full_name,
+                avatar_url,
+                is_active
+              )
+            `,
 					)
 					.eq("room_id", room.id)
 					.neq("user_id", user.id)
@@ -123,7 +124,10 @@ export const getRecentRooms = async (
 			return {
 				id: room.id,
 
-				name: room.chat_type === "person" ? profileInfo?.full_name : room.name,
+				name:
+					room.chat_type === "person"
+						? profileInfo?.full_name || "Unknown User"
+						: room.name,
 
 				chat_type: room.chat_type,
 
@@ -149,10 +153,68 @@ export const getRecentRooms = async (
 		.filter((room): room is RecentRoom => room !== null)
 		.sort(
 			(a, b) =>
-				new Date(b?.last_message_at ?? 0).getTime() -
-				new Date(a?.last_message_at ?? 0).getTime(),
+				new Date(b.last_message_at ?? 0).getTime() -
+				new Date(a.last_message_at ?? 0).getTime(),
 		)
 		.slice(0, limit);
+};
+
+export const getUnreadCounts = async (): Promise<Record<string, number>> => {
+	const supabase = await createClient();
+
+	const user = await getCurrentUser();
+
+	if (!user) return {};
+
+	const { data: memberships, error } = await supabase
+		.from("room_members")
+		.select("room_id, last_read_at")
+		.eq("user_id", user.id);
+
+	if (error || !memberships) {
+		console.error(error);
+		return {};
+	}
+
+	const counts = await Promise.all(
+		memberships.map(async (membership) => {
+			let query = supabase
+				.from("messages")
+				.select("id", {
+					count: "exact",
+					head: true,
+				})
+				.eq("room_id", membership.room_id)
+				.neq("sender_id", user.id);
+
+			if (membership.last_read_at) {
+				query = query.gt("created_at", membership.last_read_at);
+			}
+
+			const { count, error } = await query;
+
+			if (error) {
+				console.error(error);
+				return {
+					roomid: membership.room_id,
+					count: 0,
+				};
+			}
+
+			return {
+				room_id: membership.room_id,
+				count: count ?? 0,
+			};
+		}),
+	);
+
+	return counts.reduce(
+		(acc, item) => {
+			acc[item.room_id] = item.count;
+			return acc;
+		},
+		{} as Record<string, number>,
+	);
 };
 
 export const updateRoomLastMessage = async (

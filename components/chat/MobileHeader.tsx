@@ -4,10 +4,11 @@ import { useTheme } from "@/components/common/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Menu, MessageSquare, Moon, Sun } from "lucide-react";
+import { Menu, MessageSquare, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import Sidebar from "./Sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const headerVariants = {
 	hidden: { opacity: 0, y: -20 },
@@ -20,7 +21,13 @@ const headerVariants = {
 	},
 };
 
-const MobileHeader = () => {
+const MobileHeader = ({
+	avatarUrl,
+	username,
+}: {
+	avatarUrl: string;
+	username: string;
+}) => {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const { toggleTheme, theme } = useTheme();
 
@@ -79,14 +86,13 @@ const MobileHeader = () => {
 						)}
 					</Button>
 					<Link href="/dashboard/profile">
-						<Button
-							variant="ghost"
-							size="sm"
-							className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-							title="Go to Dashboard"
-						>
-							<LayoutDashboard className="w-5 h-5" />
-						</Button>
+						<Avatar className="hover:border-2 border-primary">
+							<AvatarImage src={avatarUrl} alt={username} />
+							<AvatarFallback>
+								{username.charAt(0).toUpperCase()}
+							</AvatarFallback>
+						</Avatar>
+						{/* </Button> */}
 					</Link>
 				</div>
 			</header>

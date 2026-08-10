@@ -75,7 +75,7 @@ export default function ChatEmptyState() {
 			variants={containerVariants}
 			initial="hidden"
 			animate="visible"
-			className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden"
+			className="h-full w-full flex flex-col items-center justify-center relative overflow-hidden py-8"
 		>
 			{/* Gradient Background */}
 			<div className="absolute inset-0 bg-linear-to-br from-gray-50 via-white to-gray-100 dark:bg-linear-to-br dark:from-black dark:via-gray-950 dark:to-gray-900" />

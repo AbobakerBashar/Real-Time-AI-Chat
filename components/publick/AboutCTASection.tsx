@@ -1,5 +1,6 @@
 "use client";
 
+import { User } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -26,7 +27,9 @@ const contentVariants = {
 	},
 };
 
-const AboutCTASection = () => {
+const AboutCTASection = ({ user }: { user: User | null }) => {
+	const isAuthenticated = !!user;
+
 	return (
 		<section className="py-16 lg:py-24 px-4 sm:px-6 lg:px-8 bg-linear-to-r from-blue-600 to-purple-600">
 			<div className="max-w-4xl mx-auto text-center">
@@ -57,7 +60,7 @@ const AboutCTASection = () => {
 					className="flex gap-4 justify-center flex-wrap"
 				>
 					<Link
-						href="/auth/signup"
+						href={isAuthenticated ? "/chat" : "/auth/signup"}
 						className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition duration-300"
 					>
 						Get Started

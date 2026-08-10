@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 			if (myRooms.length > 0) {
 				const { data: existingRoom, error: existingError } = await supabase
 					.from("room_members")
-					.select("room_id")
+					.select("room_id, rooms(chat_type)")
 					.in(
 						"room_id",
 						myRooms.map((r) => r.room_id),
@@ -62,7 +62,10 @@ export async function POST(request: Request) {
 				if (existingError) throw new Error(existingError.message);
 
 				// A room already exists between these two users
-				if (existingRoom) {
+				const room = Array.isArray(existingRoom?.rooms)
+					? existingRoom?.rooms[0]
+					: existingRoom?.rooms;
+				if (existingRoom && room?.chat_type === "person") {
 					return NextResponse.json(
 						{ roomId: existingRoom.room_id, success: true },
 						{ status: 200 },

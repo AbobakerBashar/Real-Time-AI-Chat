@@ -1,28 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
 
 import AppearanceSection from "@/components/dashboard/AppearanceSection";
 import SttingsNotificationsSection from "@/components/dashboard/SttingsNotificationsSection";
-import PerformanceSection from "@/components/dashboard/PerformanceSection";
 import PrivacySection from "@/components/dashboard/PrivacySection";
-import SaveSettingsButton from "@/components/dashboard/SaveSettingsButton";
+import AboutSection from "@/components/dashboard/AboutSection";
+import { UserProfile } from "@/types/auth";
 
 const itemVariants = {
 	hidden: { opacity: 0, y: 20 },
 	visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-const SettingsComponent = () => {
-	const [settings, setSettings] = useState({
-		soundEnabled: true,
-		notificationsEnabled: true,
-		compactMode: false,
-		autoSave: true,
-		lowBandwidth: false,
-	});
-
+const SettingsComponent = ({ profile }: { profile: UserProfile | null }) => {
+	const settings = {
+		enable_notifications: profile?.enable_notifications ?? true,
+		enable_sound_effects: profile?.enable_sound_effects ?? true,
+	};
 	return (
 		<motion.div
 			initial={{ opacity: 0 }}
@@ -40,22 +35,19 @@ const SettingsComponent = () => {
 			</motion.div>
 
 			{/* Appearance Section */}
-			<AppearanceSection settings={settings} setSettings={setSettings} />
+			<AppearanceSection />
 
 			{/* Notifications Section */}
-			<SttingsNotificationsSection
-				settings={settings}
-				setSettings={setSettings}
-			/>
-
-			{/* Performance Section */}
-			<PerformanceSection settings={settings} setSettings={setSettings} />
+			<SttingsNotificationsSection settings={settings} />
 
 			{/* Privacy Section */}
-			<PrivacySection />
+			<PrivacySection
+				show_last_seen={profile?.show_last_seen ?? true}
+				show_online_status={profile?.show_online_status ?? true}
+			/>
 
-			{/* Save Button */}
-			<SaveSettingsButton settings={settings} />
+			{/* About Section */}
+			<AboutSection />
 		</motion.div>
 	);
 };

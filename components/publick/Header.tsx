@@ -9,7 +9,6 @@ import {
 	Home,
 	Mail,
 	Users,
-	BadgeDollarSign,
 	LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
@@ -29,7 +28,6 @@ import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
 	{ href: "/", label: "Home", Icon: Home },
-	{ href: "/pricing", label: "Pricing", Icon: BadgeDollarSign },
 	{ href: "/about", label: "About", Icon: Users },
 	{ href: "/contact", label: "Contact", Icon: Mail },
 ];
@@ -63,7 +61,7 @@ export default function Header() {
 					</Link>
 
 					{/* Desktop Nav */}
-					<nav className="hidden md:flex items-center gap-3 lg:gap-6 py-2 px-2 border lg:border-none border-gray-200 dark:border-gray-800 rounded-lg ">
+					<nav className="hidden md:flex items-center gap-3 lg:gap-6 py-2 px-2 border border-gray-200 dark:border-gray-800 rounded-lg ">
 						{NAV_LINKS.map((link) => (
 							<Link
 								key={link.href}

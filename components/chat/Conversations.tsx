@@ -74,6 +74,12 @@ const Conversations = ({ rooms }: { rooms: RecentRoom[] }) => {
 											{room.last_message}
 										</p>
 									)}
+									{typeof room.unread_count === "number" &&
+										room.unread_count > 0 && (
+											<span className="ml-3 inline-flex items-center justify-center rounded-full bg-indigo-600 text-white text-[11px] min-w-5.5 h-4.5 px-1">
+												{room.unread_count}
+											</span>
+										)}
 								</div>
 							</div>
 						</Link>

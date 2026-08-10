@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/lib/utils";
 import { UserProfile } from "@/types/auth";
 import { RecentRoom } from "@/types/rooms";
 import { motion } from "framer-motion";
@@ -107,12 +108,7 @@ const DashboardrPageComponent = ({
 									Member Since
 								</p>
 								<p className="text-3xl font-bold text-gray-900 dark:text-white">
-									{user?.created_at
-										? new Date(user.created_at).toLocaleDateString("en-US", {
-												month: "short",
-												year: "numeric",
-											})
-										: "N/A"}
+									{user?.created_at ? formatDate(user.created_at) : "N/A"}
 								</p>
 							</div>
 							<div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -139,56 +135,60 @@ const DashboardrPageComponent = ({
 
 				{recentRooms.length > 0 ? (
 					<div className="space-y-3">
-						{recentRooms.map((room, index) => (
-							<motion.div
-								key={room.id}
-								variants={itemVariants}
-								custom={index}
-								whileHover={{ scale: 1.02, x: 4 }}
-								whileTap={{ scale: 0.98 }}
-							>
-								<Link href={`/chat/${room.id}`}>
-									<Card className="hover:shadow-md dark:hover:shadow-purple-500/20 transition-all cursor-pointer">
-										<CardContent className="pt-4">
-											<div className="flex items-start gap-4">
-												{/* Icon */}
-												<div className="mt-1 shrink-0">
-													{room.chat_type === "ai" ? (
-														<div className="w-3 h-3 bg-indigo-500 rounded-full" />
-													) : (
-														<div className="w-3 h-3 bg-green-500 rounded-full" />
-													)}
-												</div>
+						{recentRooms.map(
+							(room, index) =>
+								index < 5 && (
+									<motion.div
+										key={room.id}
+										variants={itemVariants}
+										custom={index}
+										whileHover={{ scale: 1.02, x: 4 }}
+										whileTap={{ scale: 0.98 }}
+									>
+										<Link href={`/chat/${room.id}`}>
+											<Card className="hover:shadow-md dark:hover:shadow-purple-500/20 transition-all cursor-pointer">
+												<CardContent className="pt-4">
+													<div className="flex items-start gap-4">
+														{/* Icon */}
+														<div className="mt-1 shrink-0">
+															{room.chat_type === "ai" ? (
+																<div className="w-3 h-3 bg-indigo-500 rounded-full" />
+															) : (
+																<div className="w-3 h-3 bg-green-500 rounded-full" />
+															)}
+														</div>
 
-												{/* Content */}
-												<div className="flex-1 min-w-0">
-													<div className="flex items-baseline justify-between gap-2 mb-1">
-														<h3 className="font-semibold text-gray-900 dark:text-white truncate">
-															{room.name}
-														</h3>
-														<span
-															className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap 
-														shrink-0"
-														>
-															{room.last_message_at
-																? new Date(
-																		room.last_message_at,
-																	).toLocaleDateString()
-																: "N/A"}
-														</span>
+														{/* Content */}
+														<div className="flex-1 min-w-0">
+															<div className="flex items-baseline justify-between gap-2 mb-1">
+																<h3 className="font-semibold text-gray-900 dark:text-white truncate">
+																	{room.name}
+																</h3>
+																<span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">
+																	{room.last_message_at
+																		? formatDate(room.last_message_at)
+																		: "N/A"}
+																</span>
+															</div>
+															{room.last_message && (
+																<p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+																	{room.last_message}
+																</p>
+															)}
+															{typeof room.unread_count === "number" &&
+																room.unread_count > 0 && (
+																	<span className="ml-3 inline-flex items-center justify-center rounded-full bg-indigo-600 text-white text-[11px] min-w-5.5 h-4.5 px-1">
+																		{room.unread_count}
+																	</span>
+																)}
+														</div>
 													</div>
-													{room.last_message && (
-														<p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-															{room.last_message}
-														</p>
-													)}
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-								</Link>
-							</motion.div>
-						))}
+												</CardContent>
+											</Card>
+										</Link>
+									</motion.div>
+								),
+						)}
 					</div>
 				) : (
 					<Card>

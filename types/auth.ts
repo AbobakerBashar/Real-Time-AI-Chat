@@ -47,6 +47,11 @@ export interface UserProfile extends MinimalProfile {
 	created_at: string;
 	updated_at?: string;
 	is_active?: boolean;
+	show_last_seen?: boolean;
+	last_seen?: string;
+	show_online_status?: boolean;
+	enable_notifications?: boolean;
+	enable_sound_effects?: boolean;
 }
 
 export interface RawMember {
@@ -80,6 +85,12 @@ export interface Member {
 export type UpdateProfileInput = {
 	full_name?: string;
 	username?: string;
+	show_last_seen?: boolean;
+	show_online_status?: boolean;
+	is_active?: boolean;
+	last_seen?: Date;
+	enable_notifications?: boolean;
+	enable_sound_effects?: boolean;
 };
 
 export type UpdateAvatarInput = {
